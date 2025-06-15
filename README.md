@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LutForge AI
+
+LutForge AI is an advanced web application that uses multimodal Large Language Models (LLMs) to analyze the color grade of images and generate professional-quality 3D LUTs (.cube format). This project combines AI vision analysis, parameter reasoning, and mathematical color transformations to create accurate color grading presets.
+
+## Features
+
+- **AI-Powered Color Analysis**: Uses Google Gemini Vision API to analyze color characteristics
+- **Mathematical LUT Generation**: Converts AI analysis into precise color transformations
+- **Professional .cube Output**: Generates industry-standard 3D LUT files
+- **Modern Web Interface**: Clean, responsive UI with drag-and-drop functionality
+
+## Technology Stack
+
+- **Frontend**: Next.js (TypeScript, Tailwind CSS)
+- **Backend**: Python (FastAPI)
+- **AI**: Google Gemini API
+- **Image Processing**: OpenCV, NumPy
+- **Libraries**: react-drag-drop-files, Pillow
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js v18+
+- Python 3.10+
+- Google Gemini API Key
+
+### Installation
+
+1. **Clone the repository**
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/yourusername/lutforge-ai.git
+cd lutforge-ai
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Backend Setup**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. **Frontend Setup**
 
-## Learn More
+```bash
+cd ../frontend
+npm install
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. **Environment Configuration**
+   Create a `.env` file in the `backend` directory:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+GEMINI_API_KEY=your_api_key_here
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Running the Application
 
-## Deploy on Vercel
+1. **Start Backend Server**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+cd backend
+uvicorn main:app --reload
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **Start Frontend Development Server**
+
+```bash
+cd frontend
+npm run dev
+```
+
+3. **Access the Application**
+   Open `http://localhost:3000` in your browser
+
+## Usage
+
+1. Upload an image with a color grade you want to analyze
+2. Click "Generate LUT" to start the AI analysis
+3. Download the generated .cube file
+4. Import into video editing software (DaVinci Resolve, Premiere Pro, etc.)
+
+## Architecture
+
+LutForge AI uses a three-stage pipeline:
+
+1. **Vision Analysis**: Gemini AI analyzes the image's color characteristics
+2. **Parameter Reasoning**: Converts descriptive analysis to mathematical parameters
+3. **LUT Generation**: Creates 3D LUT using precise color transformations
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request.
+
+## License
+
+This project is licensed under the MIT License.
