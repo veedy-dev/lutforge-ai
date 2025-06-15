@@ -11,6 +11,7 @@ import RawProcessor from "@/components/raw-processor"
 
 export default function Home() {
   const [generatedLut, setGeneratedLut] = useState<string | null>(null)
+  const [referenceImage, setReferenceImage] = useState<string | null>(null)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -71,7 +72,7 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <LutGenerator onLutGenerated={setGeneratedLut} />
+                <LutGenerator onLutGenerated={setGeneratedLut} onImageUploaded={setReferenceImage} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -88,7 +89,7 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ManualControls initialLut={generatedLut} />
+                <ManualControls initialLut={generatedLut} referenceImage={referenceImage} />
               </CardContent>
             </Card>
           </TabsContent>

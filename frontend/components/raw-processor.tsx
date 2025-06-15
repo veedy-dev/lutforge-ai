@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Slider } from "@/components/ui/slider"
 import { Upload, ImageIcon, Download, Eye, EyeOff } from "lucide-react"
-import Image from "next/image"
+
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -183,11 +183,10 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
                     </CardHeader>
                     <CardContent>
                       <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-                        <Image
+                        <img
                           src={rawImage || "/placeholder.svg"}
                           alt="Original RAW image"
-                          fill
-                          className="object-cover"
+                          className="w-full h-full object-cover"
                         />
                       </div>
                     </CardContent>
@@ -200,11 +199,10 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
                     <CardContent>
                       <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
                         {processedImage ? (
-                          <Image
+                          <img
                             src={processedImage || "/placeholder.svg"}
                             alt="Processed image with LUT"
-                            fill
-                            className="object-cover"
+                            className="w-full h-full object-cover"
                             style={{
                               filter: `contrast(1.1) saturate(1.2) opacity(${lutIntensity[0] / 100})`,
                             }}
@@ -225,11 +223,10 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
                   </CardHeader>
                   <CardContent>
                     <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-                      <Image
+                      <img
                         src={processedImage || rawImage}
                         alt="Image preview"
-                        fill
-                        className="object-cover"
+                        className="w-full h-full object-cover"
                         style={
                           processedImage
                             ? {

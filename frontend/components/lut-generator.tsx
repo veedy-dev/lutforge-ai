@@ -14,9 +14,10 @@ import { Label } from "@/components/ui/label"
 
 interface LutGeneratorProps {
   onLutGenerated: (lut: string) => void
+  onImageUploaded: (image: string) => void
 }
 
-export default function LutGenerator({ onLutGenerated }: LutGeneratorProps) {
+export default function LutGenerator({ onLutGenerated, onImageUploaded }: LutGeneratorProps) {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -50,7 +51,9 @@ export default function LutGenerator({ onLutGenerated }: LutGeneratorProps) {
     if (file) {
       const reader = new FileReader()
       reader.onload = () => {
-        setUploadedImage(reader.result as string)
+        const imageData = reader.result as string
+        setUploadedImage(imageData)
+        onImageUploaded(imageData)
         setError(null)
       }
       reader.readAsDataURL(file)

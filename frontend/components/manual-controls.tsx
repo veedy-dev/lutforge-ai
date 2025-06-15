@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 
 interface ManualControlsProps {
   initialLut: string | null
+  referenceImage: string | null
 }
 
 interface ColorAdjustments {
@@ -27,7 +28,7 @@ interface ColorAdjustments {
   tint: number
 }
 
-export default function ManualControls({ initialLut }: ManualControlsProps) {
+export default function ManualControls({ initialLut, referenceImage }: ManualControlsProps) {
   const [adjustments, setAdjustments] = useState<ColorAdjustments>({
     exposure: 0,
     contrast: 0,
@@ -41,7 +42,7 @@ export default function ManualControls({ initialLut }: ManualControlsProps) {
     tint: 0,
   })
 
-  const [previewImage, setPreviewImage] = useState<string>("/placeholder.svg?height=400&width=600")
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [lutFileName, setLutFileName] = useState("")
 
   const resetAdjustments = () => {
@@ -118,18 +119,27 @@ export default function ManualControls({ initialLut }: ManualControlsProps) {
             </CardHeader>
             <CardContent>
               <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-                <img
-                  src={previewImage || "/placeholder.svg"}
-                  alt="Preview with LUT applied"
-                  className="w-full h-full object-cover"
-                  style={{
-                    filter: `
-                      brightness(${1 + adjustments.exposure / 100})
-                      contrast(${1 + adjustments.contrast / 100})
-                      saturate(${1 + adjustments.saturation / 100})
-                    `,
-                  }}
-                />
+                {referenceImage ? (
+                  <img
+                    src={referenceImage}
+                    alt="Preview with LUT applied"
+                    className="w-full h-full object-cover"
+                    style={{
+                      filter: `
+                        brightness(${1 + adjustments.exposure / 100})
+                        contrast(${1 + adjustments.contrast / 100})
+                        saturate(${1 + adjustments.saturation / 100})
+                      `,
+                    }}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <div className="text-center">
+                      <Palette className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Upload an image in the Generate LUT tab to see live preview</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
