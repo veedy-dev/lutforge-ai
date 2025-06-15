@@ -26,6 +26,18 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
     if (file) {
+      // Check if it's a browser-compatible image format
+      const isWebCompatible = file.type.startsWith('image/') && 
+        (file.type.includes('jpeg') || file.type.includes('jpg') || 
+         file.type.includes('png') || file.type.includes('webp') || 
+         file.type.includes('tiff'))
+      
+      if (!isWebCompatible) {
+        // For RAW files, show a helpful message
+        alert(`RAW files (${file.name}) cannot be previewed directly in browsers. Please upload a JPEG/PNG version of your image for preview. The LUT will still work with your RAW processing software.`)
+        return
+      }
+
       const reader = new FileReader()
       reader.onload = () => {
         setRawImage(reader.result as string)
@@ -41,7 +53,7 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      "image/*": [".raw", ".cr2", ".nef", ".arw", ".dng", ".jpg", ".jpeg", ".png", ".tiff"],
+      "image/*": [".jpg", ".jpeg", ".png", ".tiff", ".webp", ".raw", ".cr2", ".nef", ".arw", ".dng"],
     },
     maxFiles: 1,
   })
@@ -92,6 +104,22 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
 
       {lutData && (
         <>
+          {/* Information Card */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <ImageIcon className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-blue-900 mb-1">RAW Processing Workflow</h4>
+                  <p className="text-sm text-blue-700">
+                    Upload a JPEG/PNG version of your image for preview. The generated LUT can be imported into 
+                    your RAW processor (Lightroom, Capture One, etc.) to apply the same grade to your RAW files.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Upload Area */}
           <div
             {...getRootProps()}
@@ -105,8 +133,8 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
                 <Upload className="w-8 h-8 text-blue-600" />
               </div>
               <div>
-                <p className="text-lg font-medium">{isDragActive ? "Drop your RAW image here" : "Upload RAW image"}</p>
-                <p className="text-sm text-muted-foreground">RAW, CR2, NEF, ARW, DNG, JPEG, PNG, TIFF supported</p>
+                <p className="text-lg font-medium">{isDragActive ? "Drop your image here" : "Upload Image for LUT Preview"}</p>
+                <p className="text-sm text-muted-foreground">JPEG, PNG, TIFF for preview • RAW files supported for LUT download</p>
               </div>
             </div>
           </div>
