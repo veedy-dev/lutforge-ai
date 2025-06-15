@@ -122,3 +122,6 @@ nohup.out
 
 # Visual Studio
 .vs/
+
+# Batch files
+*.bat
