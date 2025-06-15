@@ -120,18 +120,66 @@ export default function ManualControls({ initialLut, referenceImage }: ManualCon
             <CardContent>
               <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
                 {referenceImage ? (
-                  <img
-                    src={referenceImage}
-                    alt="Preview with LUT applied"
-                    className="w-full h-full object-cover"
-                    style={{
-                      filter: `
-                        brightness(${1 + adjustments.exposure / 100})
-                        contrast(${1 + adjustments.contrast / 100})
-                        saturate(${1 + adjustments.saturation / 100})
-                      `,
-                    }}
-                  />
+                  <div className="relative w-full h-full">
+                    <img
+                      src={referenceImage}
+                      alt="Preview with LUT applied"
+                      className="w-full h-full object-cover"
+                      style={{
+                        filter: `
+                          brightness(${1 + (adjustments.exposure + adjustments.whites * 0.3) / 100})
+                          contrast(${1 + (adjustments.contrast + (adjustments.whites - adjustments.blacks) * 0.4) / 100})
+                          saturate(${1 + (adjustments.saturation + adjustments.vibrance * 0.6) / 100})
+                        `,
+                        borderRadius: '8px',
+                      }}
+                    />
+                    {/* Temperature and Tint overlay */}
+                    <div
+                      className="absolute inset-0 pointer-events-none rounded-lg"
+                      style={{
+                        background: `linear-gradient(
+                          45deg,
+                          rgba(${adjustments.temperature > 0 ? 255 + adjustments.temperature * 0.8 : 255 + adjustments.temperature * 0.5}, 
+                               ${255 + adjustments.tint * 0.6}, 
+                               ${adjustments.temperature < 0 ? 255 - adjustments.temperature * 0.8 : 255 + adjustments.temperature * 0.3}, 
+                               ${(Math.abs(adjustments.temperature) + Math.abs(adjustments.tint)) / 800})
+                        )`,
+                        mixBlendMode: 'overlay',
+                      }}
+                    />
+                    
+                    {/* Highlights and Shadows overlay */}
+                    <div
+                      className="absolute inset-0 pointer-events-none rounded-lg"
+                      style={{
+                        background: `
+                          radial-gradient(
+                            ellipse at center,
+                            rgba(${adjustments.highlights < 0 ? '0,0,0' : '255,255,255'}, ${Math.abs(adjustments.highlights) / 400}) 0%,
+                            transparent 40%
+                          ),
+                          radial-gradient(
+                            ellipse at center,
+                            transparent 60%,
+                            rgba(${adjustments.shadows > 0 ? '255,255,255' : '0,0,0'}, ${Math.abs(adjustments.shadows) / 300}) 100%
+                          )
+                        `,
+                        mixBlendMode: 'overlay',
+                      }}
+                    />
+                    
+                    {/* Blacks adjustment overlay */}
+                    {adjustments.blacks !== 0 && (
+                      <div
+                        className="absolute inset-0 pointer-events-none rounded-lg"
+                        style={{
+                          background: `rgba(${adjustments.blacks > 0 ? '255,255,255' : '0,0,0'}, ${Math.abs(adjustments.blacks) / 300})`,
+                          mixBlendMode: adjustments.blacks > 0 ? 'screen' : 'multiply',
+                        }}
+                      />
+                    )}
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-muted-foreground">
                     <div className="text-center">
