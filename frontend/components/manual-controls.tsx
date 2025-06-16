@@ -141,14 +141,18 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
             )}
           </div>
         </div>
-        <Slider
-          value={[value]}
-          onValueChange={(value) => updateAdjustment(adjustmentKey, value)}
-          min={min}
-          max={max}
-          step={step}
-          className="w-full"
-        />
+        <div className="px-1">
+          <Slider
+            value={[value]}
+            onValueChange={(value) => updateAdjustment(adjustmentKey, value)}
+            min={min}
+            max={max}
+            step={step}
+            className="w-full"
+            orientation="horizontal"
+            disabled={false}
+          />
+        </div>
       </div>
     )
   }
