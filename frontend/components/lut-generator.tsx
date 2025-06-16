@@ -1,56 +1,68 @@
-"use client"
+"use client";
 
-import { useState, useCallback, useEffect } from "react"
-import { useDropzone } from "react-dropzone"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Card, CardContent } from "@/components/ui/card"
-import { Upload, ImageIcon, Download, Sparkles, AlertCircle } from "lucide-react"
-import Image from "next/image"
-import { generateLutFromImage } from "@/lib/ai-lut-generator"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { generateLutFromImage } from "@/lib/ai-lut-generator";
+import { AlertCircle, Download, ImageIcon, Sparkles, Upload } from "lucide-react";
+import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
+import { useDropzone } from "react-dropzone";
 
-interface LutGeneratorState {
-  lutFileName: string
-  generatedFileName: string
-  isAnalyzing: boolean
-  progress: number
-  error: string | null
-  uploadedImage: string | null
+interface LutGeneratorState
+{
+  lutFileName: string;
+  generatedFileName: string;
+  isAnalyzing: boolean;
+  progress: number;
+  error: string | null;
+  uploadedImage: string | null;
 }
 
-interface LutGeneratorProps {
-  onLutGenerated: (lut: string) => void
-  onImageUploaded: (image: string) => void
-  persistentState?: LutGeneratorState
-  onStateChange?: (state: Omit<LutGeneratorState, 'uploadedImage'>) => void
+interface LutGeneratorProps
+{
+  onLutGenerated: (lut: string) => void;
+  onImageUploaded: (image: string) => void;
+  persistentState?: LutGeneratorState;
+  onStateChange?: (state: Omit<LutGeneratorState, "uploadedImage">) => void;
 }
 
-export default function LutGenerator({ onLutGenerated, onImageUploaded, persistentState, onStateChange }: LutGeneratorProps) {
-  const [uploadedImage, setUploadedImage] = useState<string | null>(persistentState?.uploadedImage || null)
-  const [isAnalyzing, setIsAnalyzing] = useState(persistentState?.isAnalyzing || false)
-  const [progress, setProgress] = useState(persistentState?.progress || 0)
-  const [generatedLut, setGeneratedLut] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(persistentState?.error || null)
-  const [lutFileName, setLutFileName] = useState(persistentState?.lutFileName || "")
-  const [generatedFileName, setGeneratedFileName] = useState(persistentState?.generatedFileName || "")
+export default function LutGenerator(
+  { onLutGenerated, onImageUploaded, persistentState, onStateChange }: LutGeneratorProps,
+)
+{
+  const [uploadedImage, setUploadedImage] = useState<string | null>(
+    persistentState?.uploadedImage || null,
+  );
+  const [isAnalyzing, setIsAnalyzing] = useState(persistentState?.isAnalyzing || false);
+  const [progress, setProgress] = useState(persistentState?.progress || 0);
+  const [generatedLut, setGeneratedLut] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(persistentState?.error || null);
+  const [lutFileName, setLutFileName] = useState(persistentState?.lutFileName || "");
+  const [generatedFileName, setGeneratedFileName] = useState(
+    persistentState?.generatedFileName || "",
+  );
 
   // Sync state changes with parent
-  useEffect(() => {
-    if (onStateChange) {
+  useEffect(() =>
+  {
+    if (onStateChange)
+    {
       onStateChange({
         lutFileName,
         generatedFileName,
         isAnalyzing,
         progress,
         error,
-      })
+      });
     }
-  }, [lutFileName, generatedFileName, isAnalyzing, progress, error, onStateChange])
+  }, [lutFileName, generatedFileName, isAnalyzing, progress, error, onStateChange]);
 
-  const generateRandomFileName = () => {
+  const generateRandomFileName = () =>
+  {
     const adjectives = [
       "Cinematic",
       "Vintage",
@@ -62,27 +74,41 @@ export default function LutGenerator({ onLutGenerated, onImageUploaded, persiste
       "Soft",
       "Bold",
       "Natural",
-    ]
-    const nouns = ["Grade", "Look", "Style", "Tone", "Vibe", "Feel", "Mood", "Touch", "Filter", "Effect"]
-    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)]
-    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)]
-    const randomNumber = Math.floor(Math.random() * 999) + 1
-    return `${randomAdjective}_${randomNoun}_${randomNumber.toString().padStart(3, "0")}`
-  }
+    ];
+    const nouns = [
+      "Grade",
+      "Look",
+      "Style",
+      "Tone",
+      "Vibe",
+      "Feel",
+      "Mood",
+      "Touch",
+      "Filter",
+      "Effect",
+    ];
+    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+    const randomNumber = Math.floor(Math.random() * 999) + 1;
+    return `${randomAdjective}_${randomNoun}_${randomNumber.toString().padStart(3, "0")}`;
+  };
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const imageData = reader.result as string
-        setUploadedImage(imageData)
-        onImageUploaded(imageData)
-        setError(null)
-      }
-      reader.readAsDataURL(file)
+  const onDrop = useCallback((acceptedFiles: File[]) =>
+  {
+    const file = acceptedFiles[0];
+    if (file)
+    {
+      const reader = new FileReader();
+      reader.onload = () =>
+      {
+        const imageData = reader.result as string;
+        setUploadedImage(imageData);
+        onImageUploaded(imageData);
+        setError(null);
+      };
+      reader.readAsDataURL(file);
     }
-  }, [onImageUploaded])
+  }, [onImageUploaded]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -90,65 +116,78 @@ export default function LutGenerator({ onLutGenerated, onImageUploaded, persiste
       "image/*": [".jpeg", ".jpg", ".png", ".tiff", ".bmp"],
     },
     maxFiles: 1,
-  })
+  });
 
-  const handleGenerateLut = async () => {
-    if (!uploadedImage) return
+  const handleGenerateLut = async () =>
+  {
+    if (!uploadedImage) return;
 
-    setIsAnalyzing(true)
-    setProgress(0)
-    setError(null)
+    setIsAnalyzing(true);
+    setProgress(0);
+    setError(null);
 
     // Generate random filename if none provided
-    if (!lutFileName.trim()) {
-      const randomName = generateRandomFileName()
-      setGeneratedFileName(randomName)
-    } else {
-      setGeneratedFileName(lutFileName.trim())
+    if (!lutFileName.trim())
+    {
+      const randomName = generateRandomFileName();
+      setGeneratedFileName(randomName);
+    }
+    else
+    {
+      setGeneratedFileName(lutFileName.trim());
     }
 
-    try {
+    try
+    {
       // Simulate progress updates
-      const progressInterval = setInterval(() => {
-        setProgress((prev) => Math.min(prev + 10, 90))
-      }, 200)
+      const progressInterval = setInterval(() =>
+      {
+        setProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
 
-      const lutData = await generateLutFromImage(uploadedImage)
+      const lutData = await generateLutFromImage(uploadedImage);
 
-      clearInterval(progressInterval)
-      setProgress(100)
+      clearInterval(progressInterval);
+      setProgress(100);
 
-      setGeneratedLut(lutData)
-      onLutGenerated(lutData)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate LUT")
-    } finally {
-      setIsAnalyzing(false)
+      setGeneratedLut(lutData);
+      onLutGenerated(lutData);
     }
-  }
+    catch (err)
+    {
+      setError(err instanceof Error ? err.message : "Failed to generate LUT");
+    }
+    finally
+    {
+      setIsAnalyzing(false);
+    }
+  };
 
-  const downloadLut = () => {
-    if (!generatedLut) return
+  const downloadLut = () =>
+  {
+    if (!generatedLut) return;
 
-    const fileName = generatedFileName || generateRandomFileName()
-    const blob = new Blob([generatedLut], { type: "text/plain" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `${fileName}.cube`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+    const fileName = generatedFileName || generateRandomFileName();
+    const blob = new Blob([generatedLut], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${fileName}.cube`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-6">
       {/* Upload Area */}
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive ? "border-purple-400 bg-purple-50" : "border-gray-300 hover:border-purple-400 hover:bg-gray-50"
-          }`}
+        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+          isDragActive ? "border-purple-400 bg-purple-50"
+            : "border-gray-300 hover:border-purple-400 hover:bg-gray-50"
+        }`}
       >
         <input {...getInputProps()} />
         <div className="flex flex-col items-center gap-4">
@@ -156,8 +195,12 @@ export default function LutGenerator({ onLutGenerated, onImageUploaded, persiste
             <Upload className="w-8 h-8 text-purple-600" />
           </div>
           <div>
-            <p className="text-lg font-medium">{isDragActive ? "Drop your image here" : "Upload reference image"}</p>
-            <p className="text-sm text-muted-foreground">Drag & drop or click to select • JPEG, PNG, TIFF supported</p>
+            <p className="text-lg font-medium">
+              {isDragActive ? "Drop your image here" : "Upload reference image"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Drag & drop or click to select • JPEG, PNG, TIFF supported
+            </p>
           </div>
         </div>
       </div>
@@ -172,7 +215,12 @@ export default function LutGenerator({ onLutGenerated, onImageUploaded, persiste
                 Reference Image
               </h3>
               <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-                <Image src={uploadedImage || "/placeholder.svg"} alt="Reference image" fill className="object-cover" />
+                <Image
+                  src={uploadedImage || "/placeholder.svg"}
+                  alt="Reference image"
+                  fill
+                  className="object-cover"
+                />
               </div>
             </CardContent>
           </Card>
@@ -195,7 +243,7 @@ export default function LutGenerator({ onLutGenerated, onImageUploaded, persiste
                         type="text"
                         placeholder="Enter custom name or leave blank for random"
                         value={lutFileName}
-                        onChange={(e) => setLutFileName(e.target.value)}
+                        onChange={e => setLutFileName(e.target.value)}
                         className="mt-1"
                       />
                       <p className="text-xs text-muted-foreground mt-1">
@@ -247,5 +295,5 @@ export default function LutGenerator({ onLutGenerated, onImageUploaded, persiste
         </Alert>
       )}
     </div>
-  )
+  );
 }

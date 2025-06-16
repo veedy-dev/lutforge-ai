@@ -99,8 +99,9 @@ keys/
 *.key
 *.pem
 
-# Memory Bank (project-specific)
+# Misc
 memory-bank/
+backup/
 
 # OS generated files
 .fuse_hidden*

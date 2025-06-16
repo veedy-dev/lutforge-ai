@@ -1,25 +1,26 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Palette, Upload, Settings, ImageIcon } from "lucide-react"
-import LutGenerator from "@/components/lut-generator"
-import ManualControls from "@/components/manual-controls"
-import RawProcessor from "@/components/raw-processor"
+import LutGenerator from "@/components/lut-generator";
+import ManualControls from "@/components/manual-controls";
+import RawProcessor from "@/components/raw-processor";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImageIcon, Palette, Settings, Upload } from "lucide-react";
+import { useState } from "react";
 
-export default function Home() {
-  const [generatedLut, setGeneratedLut] = useState<string | null>(null)
-  const [referenceImage, setReferenceImage] = useState<string | null>(null)
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+export default function Home()
+{
+  const [generatedLut, setGeneratedLut] = useState<string | null>(null);
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [lutGeneratorState, setLutGeneratorState] = useState({
     lutFileName: "",
     generatedFileName: "",
     isAnalyzing: false,
     progress: 0,
     error: null as string | null,
-  })
+  });
   const [manualControlsState, setManualControlsState] = useState({
     exposure: 0,
     contrast: 0,
@@ -31,7 +32,7 @@ export default function Home() {
     vibrance: 0,
     temperature: 0,
     tint: 0,
-  })
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -47,8 +48,8 @@ export default function Home() {
             </h1>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            AI-powered color grading with intelligent 3D LUT generation. Upload an image, let AI analyze the color
-            grade, and generate professional-quality LUTs for your workflow.
+            AI-powered color grading with intelligent 3D LUT generation. Upload an image, let AI
+            analyze the color grade, and generate professional-quality LUTs for your workflow.
           </p>
           <div className="flex items-center justify-center gap-2 mt-4">
             <Badge variant="secondary" className="bg-purple-100 text-purple-700">
@@ -88,19 +89,21 @@ export default function Home() {
                   AI LUT Generation
                 </CardTitle>
                 <CardDescription>
-                  Upload a reference image and let our AI analyze its color grade to generate a matching 3D LUT
+                  Upload a reference image and let our AI analyze its color grade to generate a
+                  matching 3D LUT
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <LutGenerator
                   onLutGenerated={setGeneratedLut}
-                  onImageUploaded={(image) => {
-                    setReferenceImage(image)
-                    setUploadedImage(image)
+                  onImageUploaded={image =>
+                  {
+                    setReferenceImage(image);
+                    setUploadedImage(image);
                   }}
                   persistentState={{
                     uploadedImage,
-                    ...lutGeneratorState
+                    ...lutGeneratorState,
                   }}
                   onStateChange={setLutGeneratorState}
                 />
@@ -149,5 +152,5 @@ export default function Home() {
         </Tabs>
       </div>
     </div>
-  )
+  );
 }

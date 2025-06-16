@@ -1,97 +1,130 @@
-"use client"
+"use client";
 
-import { useState, useCallback } from "react"
-import { useDropzone } from "react-dropzone"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Slider } from "@/components/ui/slider"
-import { Upload, ImageIcon, Download, Eye, EyeOff } from "lucide-react"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { Download, Eye, EyeOff, ImageIcon, Upload } from "lucide-react";
+import { useCallback, useState } from "react";
+import { useDropzone } from "react-dropzone";
 
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-interface RawProcessorProps {
-  lutData: string | null
+interface RawProcessorProps
+{
+  lutData: string | null;
 }
 
-export default function RawProcessor({ lutData }: RawProcessorProps) {
-  const [rawImage, setRawImage] = useState<string | null>(null)
-  const [processedImage, setProcessedImage] = useState<string | null>(null)
-  const [showComparison, setShowComparison] = useState(false)
-  const [lutIntensity, setLutIntensity] = useState([100])
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [processedFileName, setProcessedFileName] = useState("")
+export default function RawProcessor({ lutData }: RawProcessorProps)
+{
+  const [rawImage, setRawImage] = useState<string | null>(null);
+  const [processedImage, setProcessedImage] = useState<string | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
+  const [lutIntensity, setLutIntensity] = useState([100]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processedFileName, setProcessedFileName] = useState("");
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0]
-    if (file) {
+  const onDrop = useCallback((acceptedFiles: File[]) =>
+  {
+    const file = acceptedFiles[0];
+    if (file)
+    {
       // Check if it's a browser-compatible image format
-      const isWebCompatible = file.type.startsWith('image/') &&
-        (file.type.includes('jpeg') || file.type.includes('jpg') ||
-          file.type.includes('png') || file.type.includes('webp') ||
-          file.type.includes('tiff'))
+      const isWebCompatible = file.type.startsWith("image/")
+        && (file.type.includes("jpeg") || file.type.includes("jpg")
+          || file.type.includes("png") || file.type.includes("webp")
+          || file.type.includes("tiff"));
 
-      if (!isWebCompatible) {
+      if (!isWebCompatible)
+      {
         // For RAW files, show a helpful message
-        alert(`RAW files (${file.name}) cannot be previewed directly in browsers. Please upload a JPEG/PNG version of your image for preview. The LUT will still work with your RAW processing software.`)
-        return
+        alert(
+          `RAW files (${file.name}) cannot be previewed directly in browsers. Please upload a JPEG/PNG version of your image for preview. The LUT will still work with your RAW processing software.`,
+        );
+        return;
       }
 
-      const reader = new FileReader()
-      reader.onload = () => {
-        setRawImage(reader.result as string)
+      const reader = new FileReader();
+      reader.onload = () =>
+      {
+        setRawImage(reader.result as string);
         // Simulate processing
-        setTimeout(() => {
-          setProcessedImage(reader.result as string)
-        }, 1000)
-      }
-      reader.readAsDataURL(file)
+        setTimeout(() =>
+        {
+          setProcessedImage(reader.result as string);
+        }, 1000);
+      };
+      reader.readAsDataURL(file);
     }
-  }, [])
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      "image/*": [".jpg", ".jpeg", ".png", ".tiff", ".webp", ".raw", ".cr2", ".nef", ".arw", ".dng"],
+      "image/*": [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".tiff",
+        ".webp",
+        ".raw",
+        ".cr2",
+        ".nef",
+        ".arw",
+        ".dng",
+      ],
     },
     maxFiles: 1,
-  })
+  });
 
-  const applyLut = async () => {
-    if (!rawImage || !lutData) return
+  const applyLut = async () =>
+  {
+    if (!rawImage || !lutData) return;
 
-    setIsProcessing(true)
+    setIsProcessing(true);
 
     // Simulate LUT processing
-    setTimeout(() => {
-      setProcessedImage(rawImage) // In reality, this would apply the LUT
-      setIsProcessing(false)
-    }, 2000)
-  }
+    setTimeout(() =>
+    {
+      setProcessedImage(rawImage); // In reality, this would apply the LUT
+      setIsProcessing(false);
+    }, 2000);
+  };
 
-  const generateRandomFileName = () => {
-    const adjectives = ["Processed", "Enhanced", "Graded", "Styled", "Refined", "Polished", "Finished", "Pro"]
-    const formats = ["Image", "Photo", "Shot", "Frame", "Pic", "Visual", "Render", "Export"]
-    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)]
-    const randomFormat = formats[Math.floor(Math.random() * formats.length)]
-    const randomNumber = Math.floor(Math.random() * 9999) + 1
-    return `${randomAdjective}_${randomFormat}_${randomNumber.toString().padStart(4, "0")}`
-  }
+  const generateRandomFileName = () =>
+  {
+    const adjectives = [
+      "Processed",
+      "Enhanced",
+      "Graded",
+      "Styled",
+      "Refined",
+      "Polished",
+      "Finished",
+      "Pro",
+    ];
+    const formats = ["Image", "Photo", "Shot", "Frame", "Pic", "Visual", "Render", "Export"];
+    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomFormat = formats[Math.floor(Math.random() * formats.length)];
+    const randomNumber = Math.floor(Math.random() * 9999) + 1;
+    return `${randomAdjective}_${randomFormat}_${randomNumber.toString().padStart(4, "0")}`;
+  };
 
-  const downloadProcessed = () => {
-    if (!processedImage) return
+  const downloadProcessed = () =>
+  {
+    if (!processedImage) return;
 
-    const fileName = processedFileName.trim() || generateRandomFileName()
+    const fileName = processedFileName.trim() || generateRandomFileName();
 
     // In a real implementation, this would download the processed image
-    const link = document.createElement("a")
-    link.href = processedImage
-    link.download = `${fileName}.jpg`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+    const link = document.createElement("a");
+    link.href = processedImage;
+    link.download = `${fileName}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6">
@@ -112,11 +145,14 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
                 <div>
                   <h4 className="font-medium text-blue-900 mb-1">Professional Workflow Note</h4>
                   <p className="text-sm text-blue-700 mb-2">
-                    <strong>For Quick Preview:</strong> This JPEG/PNG workflow is convenient for testing and visualization.
+                    <strong>For Quick Preview:</strong>{" "}
+                    This JPEG/PNG workflow is convenient for testing and visualization.
                   </p>
                   <p className="text-sm text-blue-700">
-                    <strong>For Professional Results:</strong> LUT preview is limited to JPEG/PNG formats.
-                    For best results, apply LUTs to RAW files using dedicated photo or video editing software to fully utilize your image data and achieve high-quality color grading.
+                    <strong>For Professional Results:</strong>{" "}
+                    LUT preview is limited to JPEG/PNG formats. For best results, apply LUTs to RAW
+                    files using dedicated photo or video editing software to fully utilize your
+                    image data and achieve high-quality color grading.
                   </p>
                 </div>
               </div>
@@ -126,8 +162,10 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
           {/* Upload Area */}
           <div
             {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
-              }`}
+            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+              isDragActive ? "border-blue-400 bg-blue-50"
+                : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
+            }`}
           >
             <input {...getInputProps()} />
             <div className="flex flex-col items-center gap-4">
@@ -135,8 +173,12 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
                 <Upload className="w-8 h-8 text-blue-600" />
               </div>
               <div>
-                <p className="text-lg font-medium">{isDragActive ? "Drop your image here" : "Upload Image for LUT Preview"}</p>
-                <p className="text-sm text-muted-foreground">JPEG, PNG, TIFF for preview • RAW files supported for LUT download</p>
+                <p className="text-lg font-medium">
+                  {isDragActive ? "Drop your image here" : "Upload Image for LUT Preview"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  JPEG, PNG, TIFF for preview • RAW files supported for LUT download
+                </p>
               </div>
             </div>
           </div>
@@ -149,8 +191,13 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
                   <span>LUT Processing</span>
                   <div className="flex gap-2">
                     <Badge variant="outline">LUT Ready</Badge>
-                    <Button onClick={() => setShowComparison(!showComparison)} variant="outline" size="sm">
-                      {showComparison ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    <Button
+                      onClick={() => setShowComparison(!showComparison)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {showComparison ? <EyeOff className="w-4 h-4" />
+                        : <Eye className="w-4 h-4" />}
                       {showComparison ? "Hide" : "Show"} Comparison
                     </Button>
                   </div>
@@ -181,10 +228,12 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
                     type="text"
                     placeholder="Enter custom name or leave blank for random"
                     value={processedFileName}
-                    onChange={(e) => setProcessedFileName(e.target.value)}
+                    onChange={e => setProcessedFileName(e.target.value)}
                     className="mt-1"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Leave empty to generate a random creative name</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Leave empty to generate a random creative name
+                  </p>
                 </div>
 
                 <div className="flex gap-2">
@@ -234,7 +283,9 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
                             alt="Processed image with LUT"
                             className="w-full h-full object-cover"
                             style={{
-                              filter: `contrast(1.1) saturate(1.2) opacity(${lutIntensity[0] / 100})`,
+                              filter: `contrast(1.1) saturate(1.2) opacity(${
+                                lutIntensity[0] / 100
+                              })`,
                             }}
                           />
                         ) : (
@@ -249,7 +300,9 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
               ) : (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">{processedImage ? "Processed Image" : "Original Image"}</CardTitle>
+                    <CardTitle className="text-base">
+                      {processedImage ? "Processed Image" : "Original Image"}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
@@ -257,13 +310,11 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
                         src={processedImage || rawImage}
                         alt="Image preview"
                         className="w-full h-full object-cover"
-                        style={
-                          processedImage
-                            ? {
-                              filter: `contrast(1.1) saturate(1.2) opacity(${lutIntensity[0] / 100})`,
-                            }
-                            : {}
-                        }
+                        style={processedImage
+                          ? {
+                            filter: `contrast(1.1) saturate(1.2) opacity(${lutIntensity[0] / 100})`,
+                          }
+                          : {}}
                       />
                     </div>
                   </CardContent>
@@ -274,5 +325,5 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
         </>
       )}
     </div>
-  )
+  );
 }
