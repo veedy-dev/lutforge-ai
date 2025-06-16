@@ -9,10 +9,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Optimized for Vercel deployment
-  experimental: {
-    optimizeCss: true,
-  },
 }
 
 export default nextConfig

@@ -1,11 +1,4 @@
 {
-    "version": 2,
-    "name": "lutforge-ai-frontend",
-    "framework": "nextjs",
     "buildCommand": "npm run build",
-    "outputDirectory": ".next",
-    "installCommand": "npm install",
-    "env": {
-        "NODE_ENV": "production"
-    }
+    "framework": "nextjs"
 }
