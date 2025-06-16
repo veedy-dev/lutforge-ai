@@ -121,11 +121,8 @@ export default function ManualControls(
     }));
   };
 
-  // Convert temperature slider value (-100 to +100) to Kelvin (2000K to 10000K)
   const temperatureToKelvin = (tempValue: number): number =>
   {
-    // Map -100 to +100 range to 2000K to 10000K range
-    // -100 = 2000K (very warm), 0 = 5500K (daylight), +100 = 10000K (very cool)
     const minKelvin = 2000;
     const maxKelvin = 10000;
     const neutralKelvin = 5500;
@@ -134,28 +131,92 @@ export default function ManualControls(
 
     if (tempValue < 0)
     {
-      // Map -100 to 0 -> 2000K to 5500K
       return minKelvin + ((tempValue + 100) / 100) * (neutralKelvin - minKelvin);
     }
     else
     {
-      // Map 0 to 100 -> 5500K to 10000K
       return neutralKelvin + (tempValue / 100) * (maxKelvin - neutralKelvin);
     }
   };
 
-  // Get color for temperature gradient based on Kelvin value
+  const kelvinToRGB = (kelvin: number): { r: number; g: number; b: number; } =>
+  {
+    const temp = Math.max(1000, Math.min(40000, kelvin)) / 100;
+
+    let red: number, green: number, blue: number;
+
+    if (temp <= 66)
+    {
+      red = 255;
+    }
+    else
+    {
+      red = temp - 60;
+      red = 329.698727446 * Math.pow(red, -0.1332047592);
+      red = Math.max(0, Math.min(255, red));
+    }
+
+    if (temp <= 66)
+    {
+      green = temp;
+      green = 99.4708025861 * Math.log(green) - 161.1195681661;
+      green = Math.max(0, Math.min(255, green));
+    }
+    else
+    {
+      green = temp - 60;
+      green = 288.1221695283 * Math.pow(green, -0.0755148492);
+      green = Math.max(0, Math.min(255, green));
+    }
+
+    if (temp >= 66)
+    {
+      blue = 255;
+    }
+    else if (temp <= 19)
+    {
+      blue = 0;
+    }
+    else
+    {
+      blue = temp - 10;
+      blue = 138.5177312231 * Math.log(blue) - 305.0447927307;
+      blue = Math.max(0, Math.min(255, blue));
+    }
+
+    return {
+      r: Math.round(red),
+      g: Math.round(green),
+      b: Math.round(blue),
+    };
+  };
+
   const getTemperatureColor = (kelvin: number): string =>
   {
-    if (kelvin <= 2000) return "#ff6b35"; // Candlelight - warm orange
-    if (kelvin <= 3000) return "#ff8c42"; // Tungsten - orange
-    if (kelvin <= 4000) return "#ffb366"; // Warm white - light orange
-    if (kelvin <= 5000) return "#fff2e6"; // Neutral warm - very light orange
-    if (kelvin <= 6000) return "#ffffff"; // Daylight - white
-    if (kelvin <= 7000) return "#e6f3ff"; // Cool white - very light blue
-    if (kelvin <= 8000) return "#b3d9ff"; // Cool - light blue
-    if (kelvin <= 9000) return "#80c5ff"; // Very cool - blue
-    return "#4da6ff"; // Sky blue - deep blue
+    const rgb = kelvinToRGB(kelvin);
+    return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+  };
+
+  const getTemperatureAdjustment = (tempValue: number) =>
+  {
+    if (tempValue === 0) return { r: 0, g: 0, b: 0, intensity: 0 };
+
+    const kelvin = temperatureToKelvin(tempValue);
+    const neutralRGB = kelvinToRGB(5500);
+    const targetRGB = kelvinToRGB(kelvin);
+
+    const rDiff = (targetRGB.r - neutralRGB.r) * 2;
+    const gDiff = (targetRGB.g - neutralRGB.g) * 1.5;
+    const bDiff = (targetRGB.b - neutralRGB.b) * 2;
+
+    const intensity = Math.abs(tempValue) / 100;
+
+    return {
+      r: rDiff,
+      g: gDiff,
+      b: bDiff,
+      intensity: intensity * 0.6,
+    };
   };
 
   const resetAdjustmentToZero = (key: keyof ColorAdjustments) =>
@@ -214,28 +275,60 @@ export default function ManualControls(
                         borderRadius: "8px",
                       }}
                     />
-                    {/* Temperature and Tint overlay */}
-                    <div
-                      className="absolute inset-0 pointer-events-none rounded-lg"
-                      style={{
-                        background: `linear-gradient(
-                          45deg,
-                          rgba(${
-                          adjustments.temperature > 0 ? 255 + adjustments.temperature * 0.8
-                            : 255 + adjustments.temperature * 0.5
-                        }, 
-                               ${255 + adjustments.tint * 0.6}, 
-                               ${
-                          adjustments.temperature < 0 ? 255 - adjustments.temperature * 0.8
-                            : 255 + adjustments.temperature * 0.3
-                        }, 
-                               ${
-                          (Math.abs(adjustments.temperature) + Math.abs(adjustments.tint)) / 800
-                        })
-                        )`,
-                        mixBlendMode: "overlay",
-                      }}
-                    />
+                    {/* Professional Temperature and Tint overlay - Color only, no brightness change */}
+                    {(adjustments.temperature !== 0 || adjustments.tint !== 0) && (
+                      <div
+                        className="absolute inset-0 pointer-events-none rounded-lg"
+                        style={{
+                          background: (() =>
+                          {
+                            let rAdjust = 0;
+                            let gAdjust = 0;
+                            let bAdjust = 0;
+
+                            if (adjustments.temperature !== 0)
+                            {
+                              const tempIntensity = adjustments.temperature / 100;
+                              rAdjust += tempIntensity * -40;
+                              bAdjust += tempIntensity * 40;
+                            }
+
+                            if (adjustments.tint !== 0)
+                            {
+                              const tintIntensity = adjustments.tint / 100;
+                              if (adjustments.tint < 0)
+                              {
+                                rAdjust += adjustments.tint * 0.5;
+                                gAdjust += adjustments.tint * -0.8;
+                                bAdjust += adjustments.tint * 0.3;
+                              }
+                              else
+                              {
+                                rAdjust += adjustments.tint * 0.8;
+                                gAdjust += adjustments.tint * -0.5;
+                                bAdjust += adjustments.tint * 0.8;
+                              }
+                            }
+
+                            const baseColor = 128;
+                            const finalR = Math.max(0, Math.min(255, baseColor + rAdjust));
+                            const finalG = Math.max(0, Math.min(255, baseColor + gAdjust));
+                            const finalB = Math.max(0, Math.min(255, baseColor + bAdjust));
+
+                            const intensity = Math.max(
+                              Math.abs(adjustments.temperature),
+                              Math.abs(adjustments.tint),
+                            ) / 100;
+                            const opacity = intensity * 0.25;
+
+                            return `rgba(${Math.round(finalR)}, ${Math.round(finalG)}, ${
+                              Math.round(finalB)
+                            }, ${opacity})`;
+                          })(),
+                          mixBlendMode: "color",
+                        }}
+                      />
+                    )}
                     {/* Highlights and Shadows overlay */}
                     <div
                       className="absolute inset-0 pointer-events-none rounded-lg"
@@ -555,8 +648,28 @@ export default function ManualControls(
                     <div
                       className="absolute inset-0 h-2 rounded-full"
                       style={{
-                        background:
-                          "linear-gradient(to right, #ff6b35 0%, #ff8c42 12.5%, #ffb366 25%, #fff2e6 37.5%, #ffffff 50%, #e6f3ff 62.5%, #b3d9ff 75%, #80c5ff 87.5%, #4da6ff 100%)",
+                        background: (() =>
+                        {
+                          const steps = [
+                            { pos: 0, kelvin: 2000 },
+                            { pos: 12.5, kelvin: 2500 },
+                            { pos: 25, kelvin: 3200 },
+                            { pos: 37.5, kelvin: 4000 },
+                            { pos: 50, kelvin: 5500 },
+                            { pos: 62.5, kelvin: 6500 },
+                            { pos: 75, kelvin: 7500 },
+                            { pos: 87.5, kelvin: 8500 },
+                            { pos: 100, kelvin: 10000 },
+                          ];
+
+                          const gradientStops = steps.map(step =>
+                          {
+                            const color = getTemperatureColor(step.kelvin);
+                            return `${color} ${step.pos}%`;
+                          }).join(", ");
+
+                          return `linear-gradient(to right, ${gradientStops})`;
+                        })(),
                       }}
                     />
                     <Slider
@@ -610,13 +723,28 @@ export default function ManualControls(
                     <div
                       className="absolute inset-0 h-2 rounded-full"
                       style={{
-                        background:
-                          "linear-gradient(to right, #00ff00 0%, #80ff80 25%, #e6ffe6 45%, #ffffff 50%, #ffe6ff 55%, #ff80ff 75%, #ff00ff 100%)",
+                        background: (() =>
+                        {
+                          const steps = [
+                            { pos: 0, color: "rgb(0, 255, 0)" },
+                            { pos: 20, color: "rgb(128, 255, 128)" },
+                            { pos: 40, color: "rgb(230, 255, 230)" },
+                            { pos: 50, color: "rgb(255, 255, 255)" },
+                            { pos: 60, color: "rgb(255, 230, 255)" },
+                            { pos: 80, color: "rgb(255, 128, 255)" },
+                            { pos: 100, color: "rgb(255, 0, 255)" },
+                          ];
+
+                          const gradientStops = steps.map(step => `${step.color} ${step.pos}%`)
+                            .join(", ");
+
+                          return `linear-gradient(to right, ${gradientStops})`;
+                        })(),
                       }}
                     />
                     <Slider
-                      value={[-adjustments.tint]}
-                      onValueChange={value => updateAdjustment("tint", [-value[0]])}
+                      value={[adjustments.tint]}
+                      onValueChange={value => updateAdjustment("tint", value)}
                       min={-100}
                       max={100}
                       step={1}
