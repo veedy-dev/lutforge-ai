@@ -13,11 +13,15 @@ RUN npm ci
 # Copy application code
 COPY . .
 
+# Copy and make startup script executable
+COPY start.sh ./
+RUN chmod +x start.sh
+
 # Build the application
 RUN npm run build
 
 # Expose port
 EXPOSE 3000
 
-# Command to run the application
-CMD ["npm", "start"] 
+# Use the startup script
+CMD ["./start.sh"] 
