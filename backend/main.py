@@ -156,123 +156,108 @@ def lut_to_cube(lut: np.ndarray) -> str:
     return cube
 
 
-def analyze_image_with_gemini(image_data: bytes) -> Dict[str, Any]:
-    """Send image to Gemini for color analysis"""
-    model = genai.GenerativeModel('gemini-1.5-flash')
-
-    # Create prompt for professional color analysis
-    prompt = """
-    You are a professional Hollywood colorist. Analyze the provided image and describe its color grade in precise, technical terms. 
-    Your output must be a JSON object with the following structure:
-    {
-        "shadows": "Detailed description of shadow characteristics",
-        "midtones": "Detailed description of midtone characteristics",
-        "highlights": "Detailed description of highlight characteristics",
-        "saturation": "Description of saturation levels and any selective adjustments",
-        "contrast": "Description of contrast characteristics",
-        "color_balance": "Description of overall color balance and any color shifts",
-        "film_emulation": "Any film stock emulation noticed"
-    }
-    
-    Be extremely detailed and technical in your analysis. Focus on:
-    - Color shifts in shadows, midtones, highlights
-    - Black point and white point characteristics
-    - Contrast curve (S-curve, linear, etc.)
-    - Saturation levels and any selective saturation adjustments
-    - Color balance and tint
-    - Any noticeable film emulation characteristics
-    
-    Example:
-    {
-        "shadows": "Slightly crushed with a strong push towards cyan and reduced saturation",
-        "midtones": "High contrast with a focus on preserving natural skin tones while slightly warming them",
-        "highlights": "Soft and slightly rolled off, with a subtle yellow/gold tint",
-        "saturation": "Overall saturation is moderately high, but greens and blues are selectively desaturated by 20-30%",
-        "contrast": "Medium-high contrast with lifted blacks and slightly compressed highlights",
-        "color_balance": "Overall cool color balance with a cyan/teal bias in shadows and warm highlights",
-        "film_emulation": "Similar to Kodak Vision3 500T film stock with teal/orange color contrast"
-    }
-    """
-
-    # Send image with prompt
-    response = model.generate_content(
-        contents=[prompt, {"mime_type": "image/jpeg", "data": image_data}],
-        generation_config={"response_mime_type": "application/json"}
-    )
-
+def analyze_image_with_gemini(image_data: bytes) -> str:
     try:
-        # Extract JSON from response
-        json_str = response.text.strip().replace('```json', '').replace('```', '')
-        return json.loads(json_str)
+        # Configure Gemini API with your key
+        print("Configuring Gemini API...")
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+        print("✅ API key configured")
+
+        # Create the model
+        print("Creating Gemini Pro Vision model...")
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        print("✅ Model created")
+
+        # Prepare the image part
+        print("Preparing image for Gemini...")
+        image_part = {
+            "mime_type": "image/jpeg",  # Assuming JPEG, adjust if needed
+            "data": image_data
+        }
+        print("✅ Image prepared")
+
+        # Create the prompt
+        prompt = """
+        Analyze this image and describe the current color grading characteristics. 
+        Focus on:
+        1. Color temperature (warm/cool)
+        2. Contrast levels
+        3. Saturation
+        4. Shadow/highlight characteristics
+        5. Overall mood/style
+        
+        Provide specific recommendations for LUT adjustments.
+        """
+
+        # Generate content with the model
+        print("Sending request to Gemini Vision API...")
+        response = model.generate_content([prompt, image_part])
+        print("✅ Received response from Gemini Vision API")
+        
+        if not response.text:
+            print("❌ Empty response from Gemini")
+            raise Exception("Empty response from Gemini Vision API")
+            
+        print(f"✅ Analysis completed, response length: {len(response.text)}")
+        return response.text
+
     except Exception as e:
-        raise ValueError(f"Failed to parse Gemini response: {str(e)}")
+        print(f"❌ Error in analyze_image_with_gemini: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
+        if hasattr(e, 'response'):
+            print(f"API Response: {e.response}")
+        raise
 
 
-def generate_parameters_with_gemini(analysis: Dict[str, Any]) -> ColorParams:
-    """Convert color analysis to mathematical parameters"""
-    model = genai.GenerativeModel('gemini-1.5-flash')
-
-    # Create prompt for parameter generation
-    prompt = f"""
-    Based on the following professional color analysis, generate a JSON object with specific parameters to replicate this look.
-    Use the exact structure shown in the example below.
-    
-    Color Analysis:
-    {json.dumps(analysis, indent=2)}
-    
-    Output JSON Structure:
-    {{
-        "black_point": float (0.0-0.1),
-        "white_point": float (0.9-1.0),
-        "shadow_tint": {{
-            "color": string ("cyan", "teal", "blue", "orange", "gold", "red", "magenta", "green", "neutral"),
-            "balance": [float, float, float] (RGB multipliers, each 0.0-2.0)
-        }},
-        "highlight_tint": {{
-            "color": string ("cyan", "teal", "blue", "orange", "gold", "red", "magenta", "green", "neutral"),
-            "balance": [float, float, float] (RGB multipliers)
-        }},
-        "contrast": float (0.8-1.5),
-        "saturation": float (0.5-1.5),
-        "channel_adjustments": {{
-            "red_gamma": float (0.7-1.3, optional),
-            "green_gamma": float (0.7-1.3, optional),
-            "blue_gamma": float (0.7-1.3, optional),
-            "green_saturation": float (0.5-1.5, optional),
-            "blue_saturation": float (0.5-1.5, optional)
-        }}
-    }}
-    
-    Example Output:
-    {{
-        "black_point": 0.05,
-        "white_point": 0.98,
-        "shadow_tint": {{"color": "cyan", "balance": [0.9, 1.0, 1.1]}},
-        "highlight_tint": {{"color": "gold", "balance": [1.1, 1.05, 0.95]}},
-        "contrast": 1.2,
-        "saturation": 1.1,
-        "channel_adjustments": {{"green_saturation": 0.8, "blue_gamma": 1.1}}
-    }}
-    
-    Important:
-    - Convert the descriptive analysis into precise numerical values
-    - Only include parameters that are explicitly mentioned in the analysis
-    - Use your expertise in color science to determine appropriate values
-    """
-
-    # Send prompt to Gemini
-    response = model.generate_content(
-        prompt,
-        generation_config={"response_mime_type": "application/json"}
-    )
-
+def generate_parameters_with_gemini(analysis: str) -> ColorParameters:
+    """Convert the color analysis into specific numeric parameters"""
     try:
-        # Extract JSON from response
+        print("Converting analysis to parameters...")
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = f"""
+        Based on this color analysis:
+        {analysis}
+        
+        Generate specific numeric parameters for a 3D LUT. Return a JSON object with these exact fields:
+        {{
+            "exposure": <float between -2.0 and 2.0>,
+            "contrast": <float between 0.5 and 2.0>,
+            "highlights": <float between -100 and 100>,
+            "shadows": <float between -100 and 100>,
+            "whites": <float between -100 and 100>,
+            "blacks": <float between -100 and 100>,
+            "saturation": <float between 0.0 and 2.0>,
+            "warmth": <float between -100 and 100>
+        }}
+        
+        Base values should be around:
+        - exposure: 0.0 (neutral)
+        - contrast: 1.0 (neutral)
+        - highlights/shadows/whites/blacks: 0 (neutral)
+        - saturation: 1.0 (neutral)
+        - warmth: 0 (neutral)
+        
+        Only deviate from neutral when the analysis specifically suggests adjustments.
+        """
+        
+        response = model.generate_content(
+            prompt,
+            generation_config={"response_mime_type": "application/json"}
+        )
+        
+        # Parse JSON response
         json_str = response.text.strip().replace('```json', '').replace('```', '')
         params_dict = json.loads(json_str)
-        return ColorParams(**params_dict)
+        
+        print("✅ Parameters generated from analysis")
+        return ColorParameters(**params_dict)
+        
     except Exception as e:
-        raise ValueError(f"Failed to parse parameters from Gemini: {str(e)}")
+        print(f"❌ Error generating parameters: {str(e)}")
+        # Fallback to neutral parameters
+        print("Using neutral fallback parameters")
+        return ColorParameters()
 
 
 @app.get("/health")
@@ -301,39 +286,58 @@ async def generate_lut(file: UploadFile = File(...)):
 
     try:
         # Read image data
+        print(f"Reading file: {file.filename}, content_type: {file.content_type}")
         image_data = await file.read()
+        print(f"Image data read successfully, size: {len(image_data)} bytes")
 
         # Step 1: Analyze image with Gemini Vision
-        print("Analyzing image with Gemini Vision...")
-        analysis = analyze_image_with_gemini(image_data)
-        print("Color Analysis:", analysis)
+        print("Starting Gemini Vision analysis...")
+        try:
+            analysis = analyze_image_with_gemini(image_data)
+            print("✅ Gemini Vision analysis completed successfully")
+            print("Color Analysis:", analysis)
+        except Exception as e:
+            print(f"❌ Gemini Vision analysis failed: {str(e)}")
+            print(f"Error type: {type(e).__name__}")
+            raise HTTPException(status_code=500, detail=f"Gemini Vision analysis failed: {str(e)}")
 
         # Step 2: Generate parameters with Gemini
-        print("Generating color parameters...")
-        params = generate_parameters_with_gemini(analysis)
-        print("Color Parameters:", params.model_dump())
+        print("Starting parameter generation...")
+        try:
+            params = generate_parameters_with_gemini(analysis)
+            print("✅ Parameter generation completed successfully")
+            print("Color Parameters:", params.model_dump())
+        except Exception as e:
+            print(f"❌ Parameter generation failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Parameter generation failed: {str(e)}")
 
         # Step 3: Generate LUT from parameters
-        print("Generating 3D LUT...")
+        print("Starting LUT generation...")
         try:
             lut_array = params_to_lut(params)
-            print("LUT array generated successfully, shape:", lut_array.shape)
+            print(f"✅ LUT array generated successfully, shape: {lut_array.shape}")
         except Exception as e:
-            print("Error in params_to_lut:", str(e))
-            raise
+            print(f"❌ LUT generation failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"LUT generation failed: {str(e)}")
 
+        # Step 4: Convert to cube format
+        print("Converting to .cube format...")
         try:
             cube_content = lut_to_cube(lut_array)
-            print("Cube content generated, length:", len(cube_content))
+            print(f"✅ Cube content generated successfully, length: {len(cube_content)}")
         except Exception as e:
-            print("Error in lut_to_cube:", str(e))
-            raise
+            print(f"❌ Cube conversion failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Cube conversion failed: {str(e)}")
 
-        # Return as plain text (frontend expects text)
+        print("🎉 LUT generation completed successfully!")
         return cube_content
 
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
-        print(f"Full error: {str(e)}")
+        print(f"❌ Unexpected error in generate_lut: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
         raise HTTPException(
             status_code=500, detail=f"LUT generation failed: {str(e)}")
 
