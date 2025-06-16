@@ -109,6 +109,11 @@ export default function LutGenerator(
         setUploadedImage(imageData);
         onImageUploaded(imageData);
         setError(null);
+        // Reset LUT generation state when new image is uploaded
+        setGeneratedLut(null);
+        setGeneratedFileName("");
+        setProgress(0);
+        setIsAnalyzing(false);
       };
       reader.readAsDataURL(file);
     }
