@@ -9,6 +9,38 @@ This guide will help you deploy LutForge AI to Koyeb's free tier, which includes
 - ✅ **Global edge deployment**
 - ✅ **Automatic HTTPS**
 
+## 🎯 RECOMMENDED: Docker Deployment (Most Reliable)
+
+### Quick Docker Deployment Steps:
+
+#### Backend Service:
+1. **Go to Koyeb Dashboard** → Create Service
+2. **Source**: GitHub → lutforge-ai repository
+3. **Source Directory**: `backend/`
+4. **Builder**: Docker (it will auto-detect the Dockerfile)
+5. **Environment Variables**:
+   - `GEMINI_API_KEY`: your_actual_api_key
+   - `CORS_ORIGINS`: `*` (update after frontend deployment)
+6. **Deploy** and copy the backend URL
+
+#### Frontend Service:  
+1. **Create Service** → GitHub → lutforge-ai repository
+2. **Source Directory**: `frontend/`
+3. **Builder**: Docker (it will auto-detect the Dockerfile)
+4. **Environment Variables**:
+   - `NEXT_PUBLIC_API_URL`: your_backend_url_from_step_1
+5. **Deploy** and copy the frontend URL
+
+#### Final Step:
+1. **Update backend CORS**: Set `CORS_ORIGINS` to your frontend URL
+2. **Test your deployment**!
+
+---
+
+## Alternative: Buildpack Deployment
+
+If Docker doesn't work, try this approach:
+
 ## Prerequisites
 
 1. **GitHub Account** - Your code needs to be in a GitHub repository

@@ -1,0 +1,13 @@
+name: lutforge-frontend
+type: web
+instance_type: nano
+regions:
+  - fra
+build:
+  buildpack: heroku/nodejs
+  command: npm ci && npm run build
+run:
+  command: npm start
+env:
+  - name: NODE_ENV
+    value: "production" 
