@@ -281,13 +281,16 @@ export default function ManualControls(
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
+              <div
+                className="relative w-full rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 border dark:border-gray-700"
+                style={{ aspectRatio: "16/9" }}
+              >
                 {referenceImage ? (
                   <div className="relative w-full h-full">
                     <img
                       src={referenceImage}
                       alt="Preview with LUT applied"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       style={{
                         filter: `
                           brightness(${1 + (adjustments.exposure + adjustments.whites * 0.3) / 100})

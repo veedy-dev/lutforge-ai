@@ -489,17 +489,19 @@ export default function RawProcessor(
   return (
     <div className="space-y-6">
       {/* Information Card */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/60 dark:border-blue-700/80 dark:backdrop-blur-sm">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
+            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-300 mt-0.5" />
             <div>
-              <h4 className="font-medium text-blue-900 mb-1">Professional Workflow Note</h4>
-              <p className="text-sm text-blue-700 mb-2">
+              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                Professional Workflow Note
+              </h4>
+              <p className="text-sm text-blue-700 dark:text-blue-200 mb-2">
                 <strong>For Quick Preview:</strong>{" "}
                 This JPEG/PNG workflow is convenient for testing and visualization.
               </p>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-blue-700 dark:text-blue-200">
                 <strong>For Professional Results:</strong>{" "}
                 LUT preview is limited to JPEG/PNG formats. For best results, apply LUTs to RAW
                 files using dedicated photo or video editing software to fully utilize your image
@@ -512,18 +514,21 @@ export default function RawProcessor(
 
       {/* Current LUT Info */}
       {getCurrentLut().lut !== null && (
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-green-50 border-green-200 dark:bg-green-900 dark:border-green-700">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <Box className="w-5 h-5 text-green-600 mt-0.5" />
+              <Box className="w-5 h-5 text-green-600 dark:text-green-300 mt-0.5" />
               <div className="flex-1">
-                <h4 className="font-medium text-green-900 mb-1">Current LUT</h4>
+                <h4 className="font-medium text-green-900 dark:text-green-100 mb-1">Current LUT</h4>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-green-700 border-green-300">
+                  <Badge
+                    variant="outline"
+                    className="text-green-700 border-green-300 dark:text-green-200 dark:border-green-600 dark:bg-green-800"
+                  >
                     {getCurrentLut().source}
                   </Badge>
                   {getCurrentLut().filename && (
-                    <span className="text-sm text-green-700 font-medium">
+                    <span className="text-sm text-green-700 dark:text-green-200 font-medium">
                       {getCurrentLut().source === "Custom Imported LUT"
                         ? `${getCurrentLut().filename}.lut`
                         : `${getCurrentLut().filename}.cube`}
@@ -531,7 +536,7 @@ export default function RawProcessor(
                   )}
                 </div>
                 {!getCurrentLut().filename && getCurrentLut().source !== "No LUT Available" && (
-                  <p className="text-sm text-green-600 mt-1">Ready to apply</p>
+                  <p className="text-sm text-green-600 dark:text-green-300 mt-1">Ready to apply</p>
                 )}
               </div>
             </div>
@@ -541,13 +546,15 @@ export default function RawProcessor(
 
       {/* No LUT Available Message */}
       {getCurrentLut().lut === null && (
-        <Card className="bg-amber-50 border-amber-200">
+        <Card className="bg-amber-50 border-amber-200 dark:bg-amber-900 dark:border-amber-700">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <Box className="w-5 h-5 text-amber-600 mt-0.5" />
+              <Box className="w-5 h-5 text-amber-600 dark:text-amber-300 mt-0.5" />
               <div>
-                <h4 className="font-medium text-amber-900 mb-1">Getting Started</h4>
-                <p className="text-sm text-amber-700">
+                <h4 className="font-medium text-amber-900 dark:text-amber-100 mb-1">
+                  Getting Started
+                </h4>
+                <p className="text-sm text-amber-700 dark:text-amber-200">
                   Upload your image and import a LUT file to get started. You can generate LUTs
                   using the "Generate LUT" or "Manual Controls" tabs, or import your own
                   .cube/.3dl/.lut files below.
@@ -564,14 +571,14 @@ export default function RawProcessor(
         <div
           {...getRootProps()}
           className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-            isDragActive ? "border-blue-400 bg-blue-50"
-              : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
+            isDragActive ? "border-blue-400 bg-blue-50 dark:bg-blue-900/30"
+              : "border-gray-300 hover:border-blue-400 hover:bg-gray-50 dark:border-gray-400 dark:hover:border-blue-400 dark:hover:bg-gray-900"
           }`}
         >
           <input {...getInputProps()} />
           <div className="flex flex-col items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-full">
-              <Upload className="w-6 h-6 text-blue-600" />
+            <div className="p-3 bg-blue-100 dark:bg-blue-800 rounded-full">
+              <Upload className="w-6 h-6 text-blue-600 dark:text-blue-300" />
             </div>
             <div>
               <p className="font-medium">
@@ -588,14 +595,14 @@ export default function RawProcessor(
         <div
           {...getLutRootProps()}
           className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-            isLutDragActive ? "border-purple-400 bg-purple-50"
-              : "border-gray-300 hover:border-purple-400 hover:bg-gray-50"
+            isLutDragActive ? "border-purple-400 bg-purple-50 dark:bg-purple-900/30"
+              : "border-gray-300 hover:border-purple-400 hover:bg-gray-50 dark:border-gray-400 dark:hover:border-purple-400 dark:hover:bg-gray-900"
           }`}
         >
           <input {...getLutInputProps()} />
           <div className="flex flex-col items-center gap-3">
-            <div className="p-3 bg-purple-100 rounded-full">
-              <Box className="w-6 h-6 text-purple-600" />
+            <div className="p-3 bg-purple-100 dark:bg-purple-800 rounded-full">
+              <Box className="w-6 h-6 text-purple-600 dark:text-purple-300" />
             </div>
             <div>
               <p className="font-medium">
@@ -711,11 +718,14 @@ export default function RawProcessor(
             <CardTitle className="text-base">Image Preview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
+            <div
+              className="relative w-full rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 border dark:border-gray-700"
+              style={{ aspectRatio: "16/9" }}
+            >
               <img
                 src={rawImage}
                 alt="Original image"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
               <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium">
                 Original

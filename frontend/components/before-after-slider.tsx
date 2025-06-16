@@ -87,7 +87,8 @@ export default function BeforeAfterSlider({
   return (
     <div
       ref={containerRef}
-      className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-100 cursor-ew-resize select-none"
+      className="relative w-full rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 border dark:border-gray-700 cursor-ew-resize select-none"
+      style={{ aspectRatio: "16/9" }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
     >
@@ -96,7 +97,7 @@ export default function BeforeAfterSlider({
         <img
           src={beforeImage}
           alt="Before"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           draggable={false}
         />
         <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium">
@@ -114,7 +115,7 @@ export default function BeforeAfterSlider({
         <img
           src={afterImage}
           alt="After"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           draggable={false}
         />
         <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium">

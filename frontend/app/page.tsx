@@ -6,6 +6,7 @@ import RawProcessor from "@/components/raw-processor";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { FileText, Image, Settings, Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -114,10 +115,13 @@ export default function Home()
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-950 dark:to-black">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 relative">
+          <div className="absolute top-0 right-0">
+            <ThemeToggle />
+          </div>
           <div className="flex items-center justify-center gap-3 mb-4">
             <LUTForgeLogo className="w-12 h-12" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -129,13 +133,22 @@ export default function Home()
             analyze the color grade, and generate professional-quality LUTs for your workflow.
           </p>
           <div className="flex items-center justify-center gap-2 mt-4">
-            <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+            <Badge
+              variant="secondary"
+              className="bg-purple-100 text-purple-700 dark:bg-purple-800 dark:text-purple-200 dark:border dark:border-purple-600"
+            >
               Multimodal AI
             </Badge>
-            <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+            <Badge
+              variant="secondary"
+              className="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200 dark:border dark:border-blue-600"
+            >
               3D LUT Generation
             </Badge>
-            <Badge variant="secondary" className="bg-green-100 text-green-700">
+            <Badge
+              variant="secondary"
+              className="bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200 dark:border dark:border-green-600"
+            >
               Live Preview
             </Badge>
           </div>
