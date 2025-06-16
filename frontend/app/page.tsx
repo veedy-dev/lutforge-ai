@@ -33,6 +33,47 @@ export default function Home()
     temperature: 0,
     tint: 0,
   });
+  const [rawProcessorState, setRawProcessorState] = useState({
+    rawImage: null as string | null,
+    processedImage: null as string | null,
+    lutIntensity: [100],
+    processedFileName: "",
+  });
+  const [manualLutData, setManualLutData] = useState<string | null>(null);
+
+  const handleLutGenerated = (lut: string | null) =>
+  {
+    setGeneratedLut(lut);
+    // Reset manual controls when a new LUT is generated
+    setManualControlsState({
+      exposure: 0,
+      contrast: 0,
+      highlights: 0,
+      shadows: 0,
+      whites: 0,
+      blacks: 0,
+      saturation: 0,
+      vibrance: 0,
+      temperature: 0,
+      tint: 0,
+    });
+  };
+
+  const handleManualControlsReset = () =>
+  {
+    setManualControlsState({
+      exposure: 0,
+      contrast: 0,
+      highlights: 0,
+      shadows: 0,
+      whites: 0,
+      blacks: 0,
+      saturation: 0,
+      vibrance: 0,
+      temperature: 0,
+      tint: 0,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -95,7 +136,7 @@ export default function Home()
               </CardHeader>
               <CardContent>
                 <LutGenerator
-                  onLutGenerated={setGeneratedLut}
+                  onLutGenerated={handleLutGenerated}
                   onImageUploaded={image =>
                   {
                     setReferenceImage(image);
@@ -128,6 +169,8 @@ export default function Home()
                   referenceImage={referenceImage}
                   persistentState={manualControlsState}
                   onStateChange={setManualControlsState}
+                  onReset={handleManualControlsReset}
+                  onLutGenerated={setManualLutData}
                 />
               </CardContent>
             </Card>
@@ -145,7 +188,13 @@ export default function Home()
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RawProcessor lutData={generatedLut} />
+                <RawProcessor
+                  lutData={generatedLut}
+                  persistentState={rawProcessorState}
+                  onStateChange={setRawProcessorState}
+                  manualAdjustments={manualControlsState}
+                  manualLutData={manualLutData}
+                />
               </CardContent>
             </Card>
           </TabsContent>

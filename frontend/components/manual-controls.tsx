@@ -16,6 +16,8 @@ interface ManualControlsProps
   referenceImage: string | null;
   persistentState?: ColorAdjustments;
   onStateChange?: (state: ColorAdjustments) => void;
+  onReset?: () => void;
+  onLutGenerated?: (lut: string) => void;
 }
 
 interface ColorAdjustments
@@ -33,7 +35,8 @@ interface ColorAdjustments
 }
 
 export default function ManualControls(
-  { initialLut, referenceImage, persistentState, onStateChange }: ManualControlsProps,
+  { initialLut, referenceImage, persistentState, onStateChange, onReset, onLutGenerated }:
+    ManualControlsProps,
 )
 {
   const [adjustments, setAdjustments] = useState<ColorAdjustments>(
@@ -57,14 +60,21 @@ export default function ManualControls(
     {
       onStateChange(adjustments);
     }
-  }, [adjustments, onStateChange]);
+
+    // Auto-generate LUT when adjustments change (for Apply to Image tab)
+    if (onLutGenerated && (Object.values(adjustments).some(val => val !== 0) || initialLut))
+    {
+      const lutData = generateLutFromAdjustments(adjustments);
+      onLutGenerated(lutData);
+    }
+  }, [adjustments, onStateChange, onLutGenerated, initialLut]);
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [lutFileName, setLutFileName] = useState("");
 
   const resetAdjustments = () =>
   {
-    setAdjustments({
+    const resetState = {
       exposure: 0,
       contrast: 0,
       highlights: 0,
@@ -75,7 +85,12 @@ export default function ManualControls(
       vibrance: 0,
       temperature: 0,
       tint: 0,
-    });
+    };
+    setAdjustments(resetState);
+    if (onReset)
+    {
+      onReset();
+    }
   };
 
   const generateRandomFileName = () =>
@@ -101,6 +116,13 @@ export default function ManualControls(
   {
     const lutData = generateLutFromAdjustments(adjustments);
     const fileName = lutFileName.trim() || generateRandomFileName();
+
+    // Send the LUT data to parent for use in Apply to Image tab
+    if (onLutGenerated)
+    {
+      onLutGenerated(lutData);
+    }
+
     const blob = new Blob([lutData], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

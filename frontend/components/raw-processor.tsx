@@ -4,26 +4,60 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { Download, Eye, EyeOff, ImageIcon, Upload } from "lucide-react";
+import { Download, ImageIcon, Upload } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import BeforeAfterSlider from "./before-after-slider";
+
+interface RawProcessorState
+{
+  rawImage: string | null;
+  processedImage: string | null;
+  lutIntensity: number[];
+  processedFileName: string;
+}
 
 interface RawProcessorProps
 {
   lutData: string | null;
+  persistentState?: RawProcessorState;
+  onStateChange?: (state: RawProcessorState) => void;
+  manualAdjustments?: any; // Manual control adjustments from the manual controls tab
+  manualLutData?: string | null; // LUT data from manual controls
 }
 
-export default function RawProcessor({ lutData }: RawProcessorProps)
+export default function RawProcessor(
+  { lutData, persistentState, onStateChange, manualAdjustments, manualLutData }: RawProcessorProps,
+)
 {
-  const [rawImage, setRawImage] = useState<string | null>(null);
-  const [processedImage, setProcessedImage] = useState<string | null>(null);
-  const [showComparison, setShowComparison] = useState(false);
-  const [lutIntensity, setLutIntensity] = useState([100]);
+  const [rawImage, setRawImage] = useState<string | null>(persistentState?.rawImage || null);
+  const [processedImage, setProcessedImage] = useState<string | null>(
+    persistentState?.processedImage || null,
+  );
+  const [lutIntensity, setLutIntensity] = useState(persistentState?.lutIntensity || [100]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processedFileName, setProcessedFileName] = useState("");
+  const [processedFileName, setProcessedFileName] = useState(
+    persistentState?.processedFileName || "",
+  );
+  const [customLutData, setCustomLutData] = useState<string | null>(null);
+
+  // Update parent state when local state changes
+  const updateState = (updates: Partial<RawProcessorState>) =>
+  {
+    if (onStateChange)
+    {
+      onStateChange({
+        rawImage,
+        processedImage,
+        lutIntensity,
+        processedFileName,
+        ...updates,
+      });
+    }
+  };
 
   const onDrop = useCallback((acceptedFiles: File[]) =>
   {
@@ -48,14 +82,28 @@ export default function RawProcessor({ lutData }: RawProcessorProps)
       const reader = new FileReader();
       reader.onload = () =>
       {
-        setRawImage(reader.result as string);
-        // Simulate processing
-        setTimeout(() =>
-        {
-          setProcessedImage(reader.result as string);
-        }, 1000);
+        const imageData = reader.result as string;
+        setRawImage(imageData);
+        updateState({ rawImage: imageData, processedImage: null });
+        // Reset processed image when new image is uploaded
+        setProcessedImage(null);
       };
       reader.readAsDataURL(file);
+    }
+  }, []);
+
+  // Handle LUT file upload
+  const onLutDrop = useCallback((acceptedFiles: File[]) =>
+  {
+    const file = acceptedFiles[0];
+    if (file)
+    {
+      const reader = new FileReader();
+      reader.onload = () =>
+      {
+        setCustomLutData(reader.result as string);
+      };
+      reader.readAsText(file);
     }
   }, []);
 
@@ -78,18 +126,86 @@ export default function RawProcessor({ lutData }: RawProcessorProps)
     maxFiles: 1,
   });
 
+  const {
+    getRootProps: getLutRootProps,
+    getInputProps: getLutInputProps,
+    isDragActive: isLutDragActive,
+  } = useDropzone({
+    onDrop: onLutDrop,
+    accept: {
+      "text/*": [".cube", ".3dl", ".lut"],
+      "application/octet-stream": [".cube", ".3dl", ".lut"],
+    },
+    maxFiles: 1,
+  });
+
+  // Determine which LUT to use and its source
+  const getCurrentLut = () =>
+  {
+    if (customLutData) return { lut: customLutData, source: "Custom Imported LUT" };
+    if (manualLutData) return { lut: manualLutData, source: "Manual Controls LUT" };
+    if (lutData) return { lut: lutData, source: "AI Generated LUT" };
+    return { lut: null, source: "No LUT Available" };
+  };
+
   const applyLut = async () =>
   {
-    if (!rawImage || !lutData) return;
+    const { lut: currentLut } = getCurrentLut();
+    if (!rawImage || !currentLut) return;
 
     setIsProcessing(true);
 
-    // Simulate LUT processing
+    // Simulate LUT processing with visual effects including manual adjustments
     setTimeout(() =>
     {
-      setProcessedImage(rawImage); // In reality, this would apply the LUT
-      setIsProcessing(false);
-    }, 2000);
+      // Create a processed version with LUT effects applied
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const img = new Image();
+
+      img.onload = () =>
+      {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx?.drawImage(img, 0, 0);
+
+        // Apply visual filters to simulate LUT processing with manual adjustments
+        if (ctx)
+        {
+          let filterString = `opacity(${lutIntensity[0] / 100})`;
+
+          // Add manual adjustments if available
+          if (manualAdjustments)
+          {
+            const brightness = 1
+              + (manualAdjustments.exposure + manualAdjustments.whites * 0.3) / 100;
+            const contrast = 1
+              + (manualAdjustments.contrast
+                  + (manualAdjustments.whites - manualAdjustments.blacks) * 0.4) / 100;
+            const saturation = 1
+              + (manualAdjustments.saturation + manualAdjustments.vibrance * 0.6) / 100;
+
+            filterString +=
+              ` brightness(${brightness}) contrast(${contrast}) saturate(${saturation})`;
+          }
+          else
+          {
+            // Default LUT simulation
+            filterString += ` contrast(1.1) saturate(1.2) brightness(1.05)`;
+          }
+
+          ctx.filter = filterString;
+          ctx.drawImage(img, 0, 0);
+        }
+
+        const processedData = canvas.toDataURL();
+        setProcessedImage(processedData);
+        updateState({ processedImage: processedData });
+        setIsProcessing(false);
+      };
+
+      img.src = rawImage;
+    }, 1500);
   };
 
   const generateRandomFileName = () =>
@@ -128,14 +244,14 @@ export default function RawProcessor({ lutData }: RawProcessorProps)
 
   return (
     <div className="space-y-6">
-      {!lutData && (
+      {getCurrentLut().lut === null && (
         <div className="text-center py-8 text-muted-foreground">
           <ImageIcon className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>Generate a LUT first to process RAW images</p>
+          <p>Generate a LUT first or import your own LUT file to process images</p>
         </div>
       )}
 
-      {lutData && (
+      {getCurrentLut().lut !== null && (
         <>
           {/* Information Card */}
           <Card className="bg-blue-50 border-blue-200">
@@ -159,26 +275,58 @@ export default function RawProcessor({ lutData }: RawProcessorProps)
             </CardContent>
           </Card>
 
-          {/* Upload Area */}
-          <div
-            {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-              isDragActive ? "border-blue-400 bg-blue-50"
-                : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
-            }`}
-          >
-            <input {...getInputProps()} />
-            <div className="flex flex-col items-center gap-4">
-              <div className="p-4 bg-blue-100 rounded-full">
-                <Upload className="w-8 h-8 text-blue-600" />
+          {/* Upload Areas */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Image Upload */}
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                isDragActive ? "border-blue-400 bg-blue-50"
+                  : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
+              }`}
+            >
+              <input {...getInputProps()} />
+              <div className="flex flex-col items-center gap-3">
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <Upload className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-medium">
+                    {isDragActive ? "Drop your image here" : "Upload Image"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    JPEG, PNG, TIFF for preview
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-lg font-medium">
-                  {isDragActive ? "Drop your image here" : "Upload Image for LUT Preview"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  JPEG, PNG, TIFF for preview • RAW files supported for LUT download
-                </p>
+            </div>
+
+            {/* LUT File Upload */}
+            <div
+              {...getLutRootProps()}
+              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                isLutDragActive ? "border-purple-400 bg-purple-50"
+                  : "border-gray-300 hover:border-purple-400 hover:bg-gray-50"
+              }`}
+            >
+              <input {...getLutInputProps()} />
+              <div className="flex flex-col items-center gap-3">
+                <div className="p-3 bg-purple-100 rounded-full">
+                  <ImageIcon className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="font-medium">
+                    {isLutDragActive ? "Drop LUT file here" : "Import LUT File"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    .cube, .3dl, .lut files
+                  </p>
+                  {customLutData && (
+                    <p className="text-xs text-green-600 font-medium mt-1">
+                      ✓ Custom LUT loaded
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -190,16 +338,8 @@ export default function RawProcessor({ lutData }: RawProcessorProps)
                 <CardTitle className="flex items-center justify-between">
                   <span>LUT Processing</span>
                   <div className="flex gap-2">
+                    <Badge variant="outline">{getCurrentLut().source}</Badge>
                     <Badge variant="outline">LUT Ready</Badge>
-                    <Button
-                      onClick={() => setShowComparison(!showComparison)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      {showComparison ? <EyeOff className="w-4 h-4" />
-                        : <Eye className="w-4 h-4" />}
-                      {showComparison ? "Hide" : "Show"} Comparison
-                    </Button>
                   </div>
                 </CardTitle>
               </CardHeader>
@@ -211,7 +351,11 @@ export default function RawProcessor({ lutData }: RawProcessorProps)
                   </div>
                   <Slider
                     value={lutIntensity}
-                    onValueChange={setLutIntensity}
+                    onValueChange={value =>
+                    {
+                      setLutIntensity(value);
+                      updateState({ lutIntensity: value });
+                    }}
                     min={0}
                     max={100}
                     step={1}
@@ -228,7 +372,11 @@ export default function RawProcessor({ lutData }: RawProcessorProps)
                     type="text"
                     placeholder="Enter custom name or leave blank for random"
                     value={processedFileName}
-                    onChange={e => setProcessedFileName(e.target.value)}
+                    onChange={e =>
+                    {
+                      setProcessedFileName(e.target.value);
+                      updateState({ processedFileName: e.target.value });
+                    }}
                     className="mt-1"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
@@ -252,75 +400,40 @@ export default function RawProcessor({ lutData }: RawProcessorProps)
           )}
 
           {/* Image Preview */}
-          {rawImage && (
-            <div className="grid gap-6">
-              {showComparison ? (
-                <div className="grid md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Original</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-                        <img
-                          src={rawImage || "/placeholder.svg"}
-                          alt="Original RAW image"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">With LUT Applied</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-                        {processedImage ? (
-                          <img
-                            src={processedImage || "/placeholder.svg"}
-                            alt="Processed image with LUT"
-                            className="w-full h-full object-cover"
-                            style={{
-                              filter: `contrast(1.1) saturate(1.2) opacity(${
-                                lutIntensity[0] / 100
-                              })`,
-                            }}
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-muted-foreground">
-                            Apply LUT to see processed image
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+          {rawImage && !processedImage && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Image Preview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
+                  <img
+                    src={rawImage}
+                    alt="Original image"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    Original
+                  </div>
                 </div>
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      {processedImage ? "Processed Image" : "Original Image"}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-                      <img
-                        src={processedImage || rawImage}
-                        alt="Image preview"
-                        className="w-full h-full object-cover"
-                        style={processedImage
-                          ? {
-                            filter: `contrast(1.1) saturate(1.2) opacity(${lutIntensity[0] / 100})`,
-                          }
-                          : {}}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Before/After Comparison (only show after LUT is applied) */}
+          {rawImage && processedImage && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Before/After Comparison</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <BeforeAfterSlider
+                  beforeImage={rawImage}
+                  afterImage={processedImage}
+                  initialPosition={50}
+                />
+              </CardContent>
+            </Card>
           )}
         </>
       )}
