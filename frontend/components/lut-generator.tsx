@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useDropzone } from "react-dropzone"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -12,19 +12,43 @@ import { generateLutFromImage } from "@/lib/ai-lut-generator"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
+interface LutGeneratorState {
+  lutFileName: string
+  generatedFileName: string
+  isAnalyzing: boolean
+  progress: number
+  error: string | null
+  uploadedImage: string | null
+}
+
 interface LutGeneratorProps {
   onLutGenerated: (lut: string) => void
   onImageUploaded: (image: string) => void
+  persistentState?: LutGeneratorState
+  onStateChange?: (state: Omit<LutGeneratorState, 'uploadedImage'>) => void
 }
 
-export default function LutGenerator({ onLutGenerated, onImageUploaded }: LutGeneratorProps) {
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [progress, setProgress] = useState(0)
+export default function LutGenerator({ onLutGenerated, onImageUploaded, persistentState, onStateChange }: LutGeneratorProps) {
+  const [uploadedImage, setUploadedImage] = useState<string | null>(persistentState?.uploadedImage || null)
+  const [isAnalyzing, setIsAnalyzing] = useState(persistentState?.isAnalyzing || false)
+  const [progress, setProgress] = useState(persistentState?.progress || 0)
   const [generatedLut, setGeneratedLut] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [lutFileName, setLutFileName] = useState("")
-  const [generatedFileName, setGeneratedFileName] = useState("")
+  const [error, setError] = useState<string | null>(persistentState?.error || null)
+  const [lutFileName, setLutFileName] = useState(persistentState?.lutFileName || "")
+  const [generatedFileName, setGeneratedFileName] = useState(persistentState?.generatedFileName || "")
+
+  // Sync state changes with parent
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange({
+        lutFileName,
+        generatedFileName,
+        isAnalyzing,
+        progress,
+        error,
+      })
+    }
+  }, [lutFileName, generatedFileName, isAnalyzing, progress, error, onStateChange])
 
   const generateRandomFileName = () => {
     const adjectives = [
@@ -58,7 +82,7 @@ export default function LutGenerator({ onLutGenerated, onImageUploaded }: LutGen
       }
       reader.readAsDataURL(file)
     }
-  }, [])
+  }, [onImageUploaded])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -123,9 +147,8 @@ export default function LutGenerator({ onLutGenerated, onImageUploaded }: LutGen
       {/* Upload Area */}
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-          isDragActive ? "border-purple-400 bg-purple-50" : "border-gray-300 hover:border-purple-400 hover:bg-gray-50"
-        }`}
+        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive ? "border-purple-400 bg-purple-50" : "border-gray-300 hover:border-purple-400 hover:bg-gray-50"
+          }`}
       >
         <input {...getInputProps()} />
         <div className="flex flex-col items-center gap-4">
