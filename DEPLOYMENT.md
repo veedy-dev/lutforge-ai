@@ -34,28 +34,33 @@ git push origin main
 2. Click **"Create Service"**
 3. Choose **"GitHub"** as source
 4. Select your **lutforge-ai** repository
-5. Set **"Source"** to `backend/` folder
+5. **IMPORTANT**: Set **"Source"** to `backend/` folder (click "Advanced" if needed)
 
 ### 2.2 Configure Backend Settings
 
 **Build Settings:**
+- **Builder**: Docker (recommended) or Buildpacks
 - **Build Command**: `pip install -r requirements.txt`
 - **Run Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+- **Working Directory**: Leave empty (since we're using backend/ as source)
 
 **Environment Variables:**
 - **GEMINI_API_KEY**: `your_actual_gemini_api_key`
 - **CORS_ORIGINS**: `*` (we'll update this after frontend deployment)
+- **PORT**: `8000` (optional, Koyeb usually sets this automatically)
 
 **Service Configuration:**
 - **Service Name**: `lutforge-backend`
 - **Region**: Choose closest to your users
 - **Instance Type**: Free tier (should be selected automatically)
+- **Dockerfile**: If using Docker, make sure it's detecting the Python buildpack
 
 ### 2.3 Deploy Backend
 
 1. Click **"Deploy"**
-2. Wait for deployment (usually 2-3 minutes)
-3. **Copy the backend URL** (e.g., `https://lutforge-backend-your-id.koyeb.app`)
+2. Wait for deployment (usually 3-5 minutes for first deploy)
+3. **If build fails**: Check logs and ensure the buildpack is detecting Python correctly
+4. **Copy the backend URL** (e.g., `https://lutforge-backend-your-id.koyeb.app`)
 
 ## Step 3: Deploy Frontend (Next.js)
 
@@ -64,16 +69,19 @@ git push origin main
 1. In Koyeb Dashboard, click **"Create Service"** again
 2. Choose **"GitHub"** as source
 3. Select your **lutforge-ai** repository again
-4. Set **"Source"** to `frontend/` folder
+4. **IMPORTANT**: Set **"Source"** to `frontend/` folder
 
 ### 3.2 Configure Frontend Settings
 
 **Build Settings:**
+- **Builder**: Buildpacks (recommended for Next.js)
 - **Build Command**: `npm install && npm run build`
 - **Run Command**: `npm start`
+- **Working Directory**: Leave empty (since we're using frontend/ as source)
 
 **Environment Variables:**
 - **NEXT_PUBLIC_API_URL**: `https://lutforge-backend-your-id.koyeb.app` (use your actual backend URL)
+- **NODE_ENV**: `production`
 
 **Service Configuration:**
 - **Service Name**: `lutforge-frontend`
@@ -83,7 +91,7 @@ git push origin main
 ### 3.3 Deploy Frontend
 
 1. Click **"Deploy"**
-2. Wait for deployment (usually 3-5 minutes)
+2. Wait for deployment (usually 5-8 minutes for Next.js builds)
 3. **Copy the frontend URL** (e.g., `https://lutforge-frontend-your-id.koyeb.app`)
 
 ## Step 4: Update CORS Settings
@@ -115,6 +123,55 @@ After successful deployment, you'll have:
 
 ## 📋 Common Issues & Solutions
 
+### Issue: "No buildpack groups passed detection"
+**This is the most common issue!**
+
+**Root Cause**: Koyeb can't auto-detect your application type because it's in a subdirectory.
+
+**Solution Options:**
+
+#### Option A: Use Subdirectory Deployment (Recommended)
+1. When creating the service, click **"Advanced"** settings
+2. Set **"Source"** to the specific folder:
+   - Backend: `backend/`
+   - Frontend: `frontend/`
+3. Make sure the buildpack files are in the subdirectory:
+   - Backend: `backend/.buildpacks` (contains Python buildpack)
+   - Frontend: `frontend/.buildpacks` (contains Node.js buildpack)
+
+#### Option B: Manual Buildpack Selection
+1. In service creation, go to **"Build"** settings
+2. Select **"Buildpacks"** as builder
+3. Manually specify the buildpack:
+   - Backend: `heroku/python`
+   - Frontend: `heroku/nodejs`
+
+#### Option C: Use Docker (Advanced)
+Create a `Dockerfile` in each subdirectory:
+
+**Backend Dockerfile:**
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+**Frontend Dockerfile:**
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
 ### Issue: "Failed to fetch" errors
 **Solution**: Check CORS_ORIGINS environment variable in backend
 
@@ -126,6 +183,12 @@ After successful deployment, you'll have:
 
 ### Issue: Gemini API errors
 **Solution**: Verify GEMINI_API_KEY is set correctly in backend environment
+
+### Issue: Build takes too long or times out
+**Solutions**: 
+- Use smaller dependencies if possible
+- Consider upgrading to Koyeb Pro for faster builds
+- Check if all dependencies in requirements.txt/package.json are necessary
 
 ## 🔧 Advanced Configuration
 
