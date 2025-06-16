@@ -55,6 +55,8 @@ export default function RawProcessor(
   );
   const [customLutData, setCustomLutData] = useState<string | null>(null);
   const [customLutFileName, setCustomLutFileName] = useState<string | null>(null);
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const prevManualAdjustmentsRef = useRef(manualAdjustments);
 
@@ -198,6 +200,7 @@ export default function RawProcessor(
     if (!rawImage || !currentLut) return;
 
     setIsProcessing(true);
+    setProcessingProgress(20);
 
     setProcessedImage(null);
     updateState({ processedImage: null });
@@ -210,35 +213,57 @@ export default function RawProcessor(
 
       img.onload = () =>
       {
-        console.log("Image loaded, starting processing...");
+        // Start processing when image loads
+        setIsProcessing(true);
+        setProcessingProgress(20);
+
+        // Create canvas and context
         canvas.width = img.width;
         canvas.height = img.height;
-        ctx?.drawImage(img, 0, 0);
 
-        if (ctx)
+        if (!ctx)
         {
-          let filterString = `opacity(${lutIntensity[0] / 100})`;
-
-          if (manualLutData || customLutData)
-          {
-            const lutToApply = customLutData || manualLutData || "";
-            applyLutToCanvas(ctx, img, lutToApply, lutIntensity[0] / 100);
-          }
-          else
-          {
-            ctx.filter = `opacity(${
-              lutIntensity[0] / 100
-            }) contrast(1.1) saturate(1.2) brightness(1.05)`;
-            ctx.drawImage(img, 0, 0);
-          }
+          setError("Failed to create canvas context");
+          setIsProcessing(false);
+          return;
         }
 
-        console.log("Processing complete, generating data URL...");
-        const processedData = canvas.toDataURL();
-        console.log("Setting processed image and stopping processing...");
-        setProcessedImage(processedData);
-        updateState({ processedImage: processedData });
+        // Set processing progress
+        setProcessingProgress(40);
+
+        // Draw image to canvas
+        ctx.drawImage(img, 0, 0);
+
+        // Set processing progress
+        setProcessingProgress(60);
+
+        // Get image data and apply basic processing
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        // Apply basic color adjustments
+        for (let i = 0; i < data.length; i += 4)
+        {
+          // Basic exposure adjustment
+          data[i] = Math.min(255, data[i] * 1.2); // Red
+          data[i + 1] = Math.min(255, data[i + 1] * 1.2); // Green
+          data[i + 2] = Math.min(255, data[i + 2] * 1.2); // Blue
+        }
+
+        // Put processed data back
+        ctx.putImageData(imageData, 0, 0);
+
+        // Set processing progress
+        setProcessingProgress(80);
+
+        // Convert to data URL
+        const processedDataUrl = canvas.toDataURL("image/jpeg", 0.9);
+
+        // Set processed image and stop processing
+        setProcessedImage(processedDataUrl);
+        updateState({ processedImage: processedDataUrl });
         setIsProcessing(false);
+        setProcessingProgress(100);
       };
 
       img.src = rawImage;

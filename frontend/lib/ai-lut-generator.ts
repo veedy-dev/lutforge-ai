@@ -1,5 +1,38 @@
 import getConfig from "next/config";
 
+function getApiUrl(): string
+{
+  let apiUrl: string | undefined;
+
+  try
+  {
+    const { publicRuntimeConfig } = getConfig() || {};
+    apiUrl = publicRuntimeConfig?.apiUrl;
+  }
+  catch (error)
+  {
+  }
+
+  if (!apiUrl || apiUrl === "undefined")
+  {
+    apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  if ((!apiUrl || apiUrl === "undefined") && typeof window !== "undefined")
+  {
+    apiUrl = window.__NEXT_DATA__?.props?.pageProps?.apiUrl;
+  }
+
+  if (!apiUrl || apiUrl === "undefined")
+  {
+    throw new Error(
+      "Backend API URL not configured. Please set NEXT_PUBLIC_API_URL environment variable.",
+    );
+  }
+
+  return apiUrl;
+}
+
 export async function generateLutFromImage(imageData: string): Promise<string>
 {
   try
@@ -17,19 +50,8 @@ export async function generateLutFromImage(imageData: string): Promise<string>
     const formData = new FormData();
     formData.append("file", blob, "image.jpg");
 
-    const { publicRuntimeConfig } = getConfig();
-    const apiUrl = publicRuntimeConfig?.apiUrl || process.env.NEXT_PUBLIC_API_URL;
-
-    if (!apiUrl || apiUrl === "undefined")
-    {
-      throw new Error(
-        "Backend API URL not configured. Please set NEXT_PUBLIC_API_URL environment variable.",
-      );
-    }
-
+    const apiUrl = getApiUrl();
     const baseUrl = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
-
-    console.log("Using API URL:", baseUrl);
 
     const response = await fetch(`${baseUrl}/api/generate-lut`, {
       method: "POST",
@@ -38,7 +60,8 @@ export async function generateLutFromImage(imageData: string): Promise<string>
 
     if (!response.ok)
     {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
     const lutData = await response.text();
