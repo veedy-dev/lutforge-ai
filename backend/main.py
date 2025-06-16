@@ -243,14 +243,32 @@ def generate_parameters_with_gemini(analysis: str) -> ColorParams:
         Only deviate from neutral when the analysis specifically suggests adjustments.
         """
         
-        response = model.generate_content(
-            prompt,
-            generation_config={"response_mime_type": "application/json"}
-        )
+        response = model.generate_content(prompt)
         
-        # Parse JSON response
-        json_str = response.text.strip().replace('```json', '').replace('```', '')
-        params_dict = json.loads(json_str)
+        # Parse JSON response - extract JSON from the response
+        response_text = response.text.strip()
+        print(f"Raw Gemini response: {response_text[:200]}...")
+        
+        # Try to extract JSON from the response
+        try:
+            # Look for JSON block in the response
+            if '```json' in response_text:
+                json_start = response_text.find('```json') + 7
+                json_end = response_text.find('```', json_start)
+                json_str = response_text[json_start:json_end].strip()
+            elif '{' in response_text and '}' in response_text:
+                # Find the first complete JSON object
+                json_start = response_text.find('{')
+                json_end = response_text.rfind('}') + 1
+                json_str = response_text[json_start:json_end]
+            else:
+                raise ValueError("No JSON found in response")
+                
+            params_dict = json.loads(json_str)
+            print(f"Successfully parsed parameters: {params_dict}")
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"Failed to parse JSON: {e}")
+            raise ValueError(f"Invalid JSON response from Gemini: {e}")
         
         print("✅ Parameters generated from analysis")
         return ColorParams(**params_dict)
