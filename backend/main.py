@@ -275,6 +275,11 @@ def generate_parameters_with_gemini(analysis: Dict[str, Any]) -> ColorParams:
         raise ValueError(f"Failed to parse parameters from Gemini: {str(e)}")
 
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "message": "LutForge AI Backend is running"}
+
 @app.post("/api/generate-lut")
 async def generate_lut(file: UploadFile = File(...)):
     # Validate file type
@@ -312,21 +317,11 @@ async def generate_lut(file: UploadFile = File(...)):
             print("Error in lut_to_cube:", str(e))
             raise
 
-        # Create response with .cube file
-        try:
-            cube_bytes = io.BytesIO(cube_content.encode('utf-8'))
-            print("BytesIO created successfully")
-            return StreamingResponse(
-                cube_bytes,
-                media_type="application/octet-stream",
-                headers={
-                    "Content-Disposition": "attachment; filename=lutforge_ai_generated.cube"}
-            )
-        except Exception as e:
-            print("Error creating StreamingResponse:", str(e))
-            raise
+        # Return as plain text (frontend expects text)
+        return cube_content
 
     except Exception as e:
+        print(f"Full error: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"LUT generation failed: {str(e)}")
 
