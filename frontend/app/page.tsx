@@ -12,6 +12,18 @@ import RawProcessor from "@/components/raw-processor"
 export default function Home() {
   const [generatedLut, setGeneratedLut] = useState<string | null>(null)
   const [referenceImage, setReferenceImage] = useState<string | null>(null)
+  const [manualControlsState, setManualControlsState] = useState({
+    exposure: 0,
+    contrast: 0,
+    highlights: 0,
+    shadows: 0,
+    whites: 0,
+    blacks: 0,
+    saturation: 0,
+    vibrance: 0,
+    temperature: 0,
+    tint: 0,
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -56,7 +68,7 @@ export default function Home() {
             </TabsTrigger>
             <TabsTrigger value="apply" className="flex items-center gap-2">
               <ImageIcon className="w-4 h-4" />
-              Apply to RAW
+              Apply to Image
             </TabsTrigger>
           </TabsList>
 
@@ -89,7 +101,12 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ManualControls initialLut={generatedLut} referenceImage={referenceImage} />
+                <ManualControls 
+                  initialLut={generatedLut} 
+                  referenceImage={referenceImage}
+                  persistentState={manualControlsState}
+                  onStateChange={setManualControlsState}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -99,9 +116,11 @@ export default function Home() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ImageIcon className="w-5 h-5" />
-                  Apply LUT to RAW Images
+                  Apply LUT to Images
                 </CardTitle>
-                <CardDescription>Upload your RAW images and apply the generated LUT with live preview</CardDescription>
+                <CardDescription>
+                  Apply your generated LUT to JPEG/PNG images for quick preview and workflow testing
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <RawProcessor lutData={generatedLut} />
