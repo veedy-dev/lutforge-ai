@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Download, ImageIcon, Upload } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 import { Input } from "@/components/ui/input";
@@ -56,16 +56,21 @@ export default function RawProcessor(
   const [customLutData, setCustomLutData] = useState<string | null>(null);
   const [customLutFileName, setCustomLutFileName] = useState<string | null>(null);
 
+  const prevManualAdjustmentsRef = useRef(manualAdjustments);
+
   useEffect(() =>
   {
-    if (rawImage && manualLutData && manualAdjustments && processedImage)
+    if (rawImage && manualLutData && processedImage && prevManualAdjustmentsRef.current)
     {
-      const hasAdjustments = Object.values(manualAdjustments).some(val => val !== 0);
-      if (hasAdjustments)
+      const hasActualChange =
+        JSON.stringify(manualAdjustments) !== JSON.stringify(prevManualAdjustmentsRef.current);
+      if (hasActualChange)
       {
         setProcessedImage(null);
+        updateState({ processedImage: null });
       }
     }
+    prevManualAdjustmentsRef.current = manualAdjustments;
   }, [manualAdjustments, manualLutData]);
 
   const updateState = (updates: Partial<RawProcessorState>) =>
@@ -214,96 +219,16 @@ export default function RawProcessor(
         {
           let filterString = `opacity(${lutIntensity[0] / 100})`;
 
-          if (customLutData)
+          if (manualLutData || customLutData)
           {
-            filterString +=
-              ` contrast(1.3) saturate(1.4) hue-rotate(15deg) brightness(1.1) sepia(0.1)`;
-          }
-          else if (
-            manualLutData && manualAdjustments
-            && Object.values(manualAdjustments).some(val => val !== 0)
-          )
-          {
-            console.log("Manual adjustments received:", manualAdjustments);
-            console.log("Tint value:", manualAdjustments.tint);
-
-            const brightness = 1
-              + (manualAdjustments.exposure + manualAdjustments.whites * 0.3) / 100;
-            const contrast = 1
-              + (manualAdjustments.contrast
-                  + (manualAdjustments.whites - manualAdjustments.blacks) * 0.4) / 100;
-            const saturation = 1
-              + (manualAdjustments.saturation + manualAdjustments.vibrance * 0.6) / 100;
-
-            filterString +=
-              ` brightness(${brightness}) contrast(${contrast}) saturate(${saturation})`;
-
-            if (manualAdjustments.temperature !== 0)
-            {
-              const tempIntensity = Math.abs(manualAdjustments.temperature) / 100;
-
-              if (manualAdjustments.temperature < 0)
-              {
-                const warmth = tempIntensity;
-                filterString += ` sepia(${warmth * 0.6}) saturate(${1 + warmth * 0.8}) hue-rotate(${
-                  -20 * warmth
-                }deg)`;
-              }
-              else
-              {
-                const coolness = tempIntensity;
-                filterString += ` hue-rotate(${200 * coolness}deg) saturate(${
-                  1 + coolness * 0.4
-                }) brightness(${1 + coolness * 0.1})`;
-              }
-            }
-
-            ctx.filter = filterString;
-            ctx.drawImage(img, 0, 0);
-
-            if (manualAdjustments.tint !== 0)
-            {
-              console.log("Applying tint overlay:", manualAdjustments.tint);
-
-              ctx.globalCompositeOperation = "color";
-
-              const tintIntensity = Math.abs(manualAdjustments.tint) / 100;
-              const opacity = tintIntensity * 0.25;
-              ctx.globalAlpha = opacity;
-
-              if (manualAdjustments.tint < 0)
-              {
-                ctx.fillStyle = "rgb(0, 255, 0)";
-                console.log("Applying GREEN overlay, opacity:", opacity);
-              }
-              else
-              {
-                ctx.fillStyle = "rgb(255, 0, 255)";
-                console.log("Applying MAGENTA overlay, opacity:", opacity);
-              }
-
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-              ctx.globalCompositeOperation = "source-over";
-              ctx.globalAlpha = 1.0;
-              ctx.filter = "none";
-            }
+            const lutToApply = customLutData || manualLutData || "";
+            applyLutToCanvas(ctx, img, lutToApply, lutIntensity[0] / 100);
           }
           else
           {
             ctx.filter = `opacity(${
               lutIntensity[0] / 100
             }) contrast(1.1) saturate(1.2) brightness(1.05)`;
-            ctx.drawImage(img, 0, 0);
-          }
-
-          if (
-            manualLutData && manualAdjustments && Object.values(manualAdjustments).some(val =>
-              val !== 0
-            ) && manualAdjustments.tint === 0
-          )
-          {
-            ctx.filter = filterString;
             ctx.drawImage(img, 0, 0);
           }
         }
@@ -351,6 +276,189 @@ export default function RawProcessor(
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const applyLutToCanvas = (
+    ctx: CanvasRenderingContext2D,
+    img: HTMLImageElement,
+    lutData: string,
+    intensity: number,
+  ) =>
+  {
+    const parsedLut = parseCubeLut(lutData);
+    if (!parsedLut)
+    {
+      ctx.filter = `opacity(${intensity}) contrast(1.1) saturate(1.2) brightness(1.05)`;
+      ctx.drawImage(img, 0, 0);
+      return;
+    }
+
+    ctx.drawImage(img, 0, 0);
+
+    const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+    const data = imageData.data;
+
+    for (let i = 0; i < data.length; i += 4)
+    {
+      const r = data[i] / 255;
+      const g = data[i + 1] / 255;
+      const b = data[i + 2] / 255;
+
+      const newColor = lookupColorInLut(r, g, b, parsedLut);
+
+      data[i] = Math.round((newColor.r * 255 * intensity) + (data[i] * (1 - intensity)));
+      data[i + 1] = Math.round((newColor.g * 255 * intensity) + (data[i + 1] * (1 - intensity)));
+      data[i + 2] = Math.round((newColor.b * 255 * intensity) + (data[i + 2] * (1 - intensity)));
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  };
+
+  const parseCubeLut = (lutString: string) =>
+  {
+    const lines = lutString.split("\n").map(line => line.trim()).filter(line =>
+      line && !line.startsWith("#")
+    );
+
+    let size = 32;
+    const lutData: [number, number, number][][][] = [];
+
+    for (const line of lines)
+    {
+      if (line.startsWith("LUT_3D_SIZE"))
+      {
+        size = parseInt(line.split(" ")[1]);
+        break;
+      }
+    }
+
+    for (let r = 0; r < size; r++)
+    {
+      lutData[r] = [];
+      for (let g = 0; g < size; g++)
+      {
+        lutData[r][g] = [];
+      }
+    }
+
+    let dataIndex = 0;
+    for (const line of lines)
+    {
+      if (
+        line.startsWith("LUT_3D_SIZE") || line.startsWith("TITLE")
+        || line.startsWith("DOMAIN_MIN") || line.startsWith("DOMAIN_MAX")
+      )
+      {
+        continue;
+      }
+
+      const values = line.split(/\s+/).map(v => parseFloat(v));
+      if (values.length === 3)
+      {
+        const b = Math.floor(dataIndex / (size * size));
+        const g = Math.floor((dataIndex % (size * size)) / size);
+        const r = dataIndex % size;
+
+        if (b < size && g < size && r < size)
+        {
+          lutData[r][g][b] = [values[0], values[1], values[2]];
+        }
+        dataIndex++;
+      }
+    }
+
+    return { size, data: lutData };
+  };
+
+  const lookupColorInLut = (
+    r: number,
+    g: number,
+    b: number,
+    lut: { size: number; data: [number, number, number][][][]; },
+  ) =>
+  {
+    const size = lut.size;
+    const data = lut.data;
+
+    const rScaled = r * (size - 1);
+    const gScaled = g * (size - 1);
+    const bScaled = b * (size - 1);
+
+    const r0 = Math.floor(rScaled);
+    const g0 = Math.floor(gScaled);
+    const b0 = Math.floor(bScaled);
+
+    const r1 = Math.min(r0 + 1, size - 1);
+    const g1 = Math.min(g0 + 1, size - 1);
+    const b1 = Math.min(b0 + 1, size - 1);
+
+    const rFrac = rScaled - r0;
+    const gFrac = gScaled - g0;
+    const bFrac = bScaled - b0;
+
+    try
+    {
+      const c000 = data[r0][g0][b0] || [r, g, b];
+      const c001 = data[r0][g0][b1] || [r, g, b];
+      const c010 = data[r0][g1][b0] || [r, g, b];
+      const c011 = data[r0][g1][b1] || [r, g, b];
+      const c100 = data[r1][g0][b0] || [r, g, b];
+      const c101 = data[r1][g0][b1] || [r, g, b];
+      const c110 = data[r1][g1][b0] || [r, g, b];
+      const c111 = data[r1][g1][b1] || [r, g, b];
+
+      const c00 = [
+        c000[0] * (1 - rFrac) + c100[0] * rFrac,
+        c000[1] * (1 - rFrac) + c100[1] * rFrac,
+        c000[2] * (1 - rFrac) + c100[2] * rFrac,
+      ];
+
+      const c01 = [
+        c001[0] * (1 - rFrac) + c101[0] * rFrac,
+        c001[1] * (1 - rFrac) + c101[1] * rFrac,
+        c001[2] * (1 - rFrac) + c101[2] * rFrac,
+      ];
+
+      const c10 = [
+        c010[0] * (1 - rFrac) + c110[0] * rFrac,
+        c010[1] * (1 - rFrac) + c110[1] * rFrac,
+        c010[2] * (1 - rFrac) + c110[2] * rFrac,
+      ];
+
+      const c11 = [
+        c011[0] * (1 - rFrac) + c111[0] * rFrac,
+        c011[1] * (1 - rFrac) + c111[1] * rFrac,
+        c011[2] * (1 - rFrac) + c111[2] * rFrac,
+      ];
+
+      const c0 = [
+        c00[0] * (1 - gFrac) + c10[0] * gFrac,
+        c00[1] * (1 - gFrac) + c10[1] * gFrac,
+        c00[2] * (1 - gFrac) + c10[2] * gFrac,
+      ];
+
+      const c1 = [
+        c01[0] * (1 - gFrac) + c11[0] * gFrac,
+        c01[1] * (1 - gFrac) + c11[1] * gFrac,
+        c01[2] * (1 - gFrac) + c11[2] * gFrac,
+      ];
+
+      const result = [
+        c0[0] * (1 - bFrac) + c1[0] * bFrac,
+        c0[1] * (1 - bFrac) + c1[1] * bFrac,
+        c0[2] * (1 - bFrac) + c1[2] * bFrac,
+      ];
+
+      return {
+        r: Math.max(0, Math.min(1, result[0])),
+        g: Math.max(0, Math.min(1, result[1])),
+        b: Math.max(0, Math.min(1, result[2])),
+      };
+    }
+    catch (e)
+    {
+      return { r, g, b };
+    }
   };
 
   return (

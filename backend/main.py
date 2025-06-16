@@ -18,7 +18,7 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 app = FastAPI(
-    title="LutForge AI API",
+    title="LUTForge AI API",
     description="AI-powered 3D LUT generation from image analysis",
     version="1.0.0"
 )
@@ -137,7 +137,7 @@ def params_to_lut(params: ColorParams) -> np.ndarray:
 def lut_to_cube(lut: np.ndarray) -> str:
     """Convert 3D LUT array to .cube file format"""
     size = lut.shape[0]
-    cube = f"# LutForge AI Generated LUT\n"
+    cube = f"# LUTForge AI Generated LUT\n"
     cube += f"# Created by AI color analysis\n"
     cube += f"LUT_3D_SIZE {size}\n\n"
 

@@ -1,6 +1,6 @@
-# LutForge AI
+# LUTForge AI
 
-LutForge AI is an advanced web application that uses multimodal Large Language Models (LLMs) to analyze the color grade of images and generate professional-quality 3D LUTs (.cube format). This project combines AI vision analysis, parameter reasoning, and mathematical color transformations to create accurate color grading presets.
+LUTForge AI is an advanced web application that uses multimodal Large Language Models (LLMs) to analyze the color grade of images and generate professional-quality 3D LUTs (.cube format). This project combines AI vision analysis, parameter reasoning, and mathematical color transformations to create accurate color grading presets.
 
 ## Features
 
@@ -85,7 +85,7 @@ npm run dev
 
 ## Architecture
 
-LutForge AI uses a three-stage pipeline:
+LUTForge AI uses a three-stage pipeline:
 
 1. **Vision Analysis**: Gemini AI analyzes the image's color characteristics
 2. **Parameter Reasoning**: Converts descriptive analysis to mathematical parameters

@@ -69,7 +69,6 @@ export default function ManualControls(
       onStateChange(adjustments);
     }
 
-    // Auto-generate LUT when adjustments change (for Apply to Image tab)
     if (onLutGenerated && (Object.values(adjustments).some(val => val !== 0) || initialLut))
     {
       const lutData = generateLutFromAdjustments(adjustments);
@@ -125,7 +124,6 @@ export default function ManualControls(
     const lutData = generateLutFromAdjustments(adjustments);
     const fileName = lutFileName.trim() || generateRandomFileName();
 
-    // Send the LUT data to parent for use in Apply to Image tab
     if (onLutGenerated)
     {
       onLutGenerated(lutData);
@@ -305,7 +303,7 @@ export default function ManualControls(
                         borderRadius: "8px",
                       }}
                     />
-                    {/* Professional Temperature and Tint overlay - Color only, no brightness change */}
+                    {/* Professional Temperature and Tint overlay - Using proper color temperature calculation */}
                     {(adjustments.temperature !== 0 || adjustments.tint !== 0) && (
                       <div
                         className="absolute inset-0 pointer-events-none rounded-lg"
@@ -318,9 +316,10 @@ export default function ManualControls(
 
                             if (adjustments.temperature !== 0)
                             {
-                              const tempIntensity = adjustments.temperature / 100;
-                              rAdjust += tempIntensity * -40;
-                              bAdjust += tempIntensity * 40;
+                              const tempAdj = getTemperatureAdjustment(adjustments.temperature);
+                              rAdjust += tempAdj.r;
+                              gAdjust += tempAdj.g;
+                              bAdjust += tempAdj.b;
                             }
 
                             if (adjustments.tint !== 0)
@@ -856,16 +855,203 @@ export default function ManualControls(
 
 function generateLutFromAdjustments(adjustments: ColorAdjustments): string
 {
-  return `# Generated LUT with manual adjustments
+  const size = 32;
+  let lutData = `# Generated LUT with manual adjustments
 TITLE "Modified LUT"
 DOMAIN_MIN 0.0 0.0 0.0
 DOMAIN_MAX 1.0 1.0 1.0
-LUT_3D_SIZE 32
+LUT_3D_SIZE ${size}
 
-# Sample LUT data (simplified)
-0.000000 0.000000 0.000000
-0.031250 0.031250 0.031250
-0.062500 0.062500 0.062500
-# ... (more LUT data would follow)
 `;
+
+  for (let b = 0; b < size; b++)
+  {
+    for (let g = 0; g < size; g++)
+    {
+      for (let r = 0; r < size; r++)
+      {
+        let red = r / (size - 1);
+        let green = g / (size - 1);
+        let blue = b / (size - 1);
+
+        if (adjustments.exposure !== 0)
+        {
+          const exposureFactor = Math.pow(2, adjustments.exposure / 100);
+          red *= exposureFactor;
+          green *= exposureFactor;
+          blue *= exposureFactor;
+        }
+
+        if (adjustments.contrast !== 0)
+        {
+          const contrastFactor = 1 + adjustments.contrast / 100;
+          red = ((red - 0.5) * contrastFactor) + 0.5;
+          green = ((green - 0.5) * contrastFactor) + 0.5;
+          blue = ((blue - 0.5) * contrastFactor) + 0.5;
+        }
+
+        if (adjustments.whites !== 0)
+        {
+          const whitesFactor = 1 + adjustments.whites / 300;
+          red = red + (1 - red) * (adjustments.whites / 100) * 0.3;
+          green = green + (1 - green) * (adjustments.whites / 100) * 0.3;
+          blue = blue + (1 - blue) * (adjustments.whites / 100) * 0.3;
+        }
+
+        if (adjustments.blacks !== 0)
+        {
+          const blacksFactor = adjustments.blacks / 300;
+          red = red + red * blacksFactor;
+          green = green + green * blacksFactor;
+          blue = blue + blue * blacksFactor;
+        }
+
+        if (adjustments.saturation !== 0)
+        {
+          const satFactor = 1 + adjustments.saturation / 100;
+          const gray = red * 0.299 + green * 0.587 + blue * 0.114;
+          red = gray + (red - gray) * satFactor;
+          green = gray + (green - gray) * satFactor;
+          blue = gray + (blue - gray) * satFactor;
+        }
+
+        if (adjustments.vibrance !== 0)
+        {
+          const vibFactor = adjustments.vibrance / 100;
+          const gray = red * 0.299 + green * 0.587 + blue * 0.114;
+          const saturation = Math.max(red, green, blue) - Math.min(red, green, blue);
+          const vibAdjustment = vibFactor * (1 - saturation);
+          red = gray + (red - gray) * (1 + vibAdjustment);
+          green = gray + (green - gray) * (1 + vibAdjustment);
+          blue = gray + (blue - gray) * (1 + vibAdjustment);
+        }
+
+        if (adjustments.temperature !== 0)
+        {
+          const tempAdj = getTemperatureAdjustmentForLut(adjustments.temperature);
+          red += tempAdj.r / 255;
+          green += tempAdj.g / 255;
+          blue += tempAdj.b / 255;
+        }
+
+        if (adjustments.tint !== 0)
+        {
+          const tintIntensity = adjustments.tint / 100;
+          if (adjustments.tint < 0)
+          {
+            red += adjustments.tint * 0.005;
+            green += adjustments.tint * -0.008;
+            blue += adjustments.tint * 0.003;
+          }
+          else
+          {
+            red += adjustments.tint * 0.008;
+            green += adjustments.tint * -0.005;
+            blue += adjustments.tint * 0.008;
+          }
+        }
+
+        if (adjustments.highlights !== 0)
+        {
+          const luminance = red * 0.299 + green * 0.587 + blue * 0.114;
+          if (luminance > 0.7)
+          {
+            const highlightFactor = adjustments.highlights / 400;
+            const strength = (luminance - 0.7) / 0.3;
+            red += highlightFactor * strength;
+            green += highlightFactor * strength;
+            blue += highlightFactor * strength;
+          }
+        }
+
+        if (adjustments.shadows !== 0)
+        {
+          const luminance = red * 0.299 + green * 0.587 + blue * 0.114;
+          if (luminance < 0.3)
+          {
+            const shadowFactor = adjustments.shadows / 300;
+            const strength = (0.3 - luminance) / 0.3;
+            red += shadowFactor * strength;
+            green += shadowFactor * strength;
+            blue += shadowFactor * strength;
+          }
+        }
+
+        red = Math.max(0, Math.min(1, red));
+        green = Math.max(0, Math.min(1, green));
+        blue = Math.max(0, Math.min(1, blue));
+
+        lutData += `${red.toFixed(6)} ${green.toFixed(6)} ${blue.toFixed(6)}\n`;
+      }
+    }
+  }
+
+  return lutData;
+}
+
+function getTemperatureAdjustmentForLut(tempValue: number)
+{
+  if (tempValue === 0) return { r: 0, g: 0, b: 0 };
+
+  const kelvin = tempValue < 0
+    ? 2000 + ((tempValue + 100) / 100) * (5500 - 2000)
+    : 5500 + (tempValue / 100) * (10000 - 5500);
+
+  const temp = Math.max(1000, Math.min(40000, kelvin)) / 100;
+  let red, green, blue;
+
+  if (temp <= 66)
+  {
+    red = 255;
+  }
+  else
+  {
+    red = temp - 60;
+    red = 329.698727446 * Math.pow(red, -0.1332047592);
+    red = Math.max(0, Math.min(255, red));
+  }
+
+  if (temp <= 66)
+  {
+    green = temp;
+    green = 99.4708025861 * Math.log(green) - 161.1195681661;
+    green = Math.max(0, Math.min(255, green));
+  }
+  else
+  {
+    green = temp - 60;
+    green = 288.1221695283 * Math.pow(green, -0.0755148492);
+    green = Math.max(0, Math.min(255, green));
+  }
+
+  if (temp >= 66)
+  {
+    blue = 255;
+  }
+  else if (temp <= 19)
+  {
+    blue = 0;
+  }
+  else
+  {
+    blue = temp - 10;
+    blue = 138.5177312231 * Math.log(blue) - 305.0447927307;
+    blue = Math.max(0, Math.min(255, blue));
+  }
+
+  const targetRGB = { r: Math.round(red), g: Math.round(green), b: Math.round(blue) };
+
+  const neutralTemp = 5500 / 100;
+  const neutralRed = 255;
+  const neutralGreen = 99.4708025861 * Math.log(neutralTemp) - 161.1195681661;
+  const neutralBlue = 138.5177312231 * Math.log(neutralTemp - 10) - 305.0447927307;
+  const neutralRGB = { r: neutralRed, g: neutralGreen, b: neutralBlue };
+
+  const intensity = Math.abs(tempValue) / 100 * 0.3;
+
+  return {
+    r: (targetRGB.r - neutralRGB.r) * intensity,
+    g: (targetRGB.g - neutralRGB.g) * intensity,
+    b: (targetRGB.b - neutralRGB.b) * intensity,
+  };
 }

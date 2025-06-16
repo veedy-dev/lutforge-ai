@@ -11,9 +11,9 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "LutForge AI - Professional Color Grading",
+  title: "LUTForge AI - Professional Color Grading",
   description: "AI-powered 3D LUT generation and professional color grading tools",
-  generator: "LutForge AI",
+  generator: "LUTForge AI",
 };
 
 export default function RootLayout({

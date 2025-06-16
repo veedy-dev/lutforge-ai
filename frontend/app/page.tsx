@@ -105,7 +105,7 @@ export default function Home()
               <Palette className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              LutForge AI
+              LUTForge AI
             </h1>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
