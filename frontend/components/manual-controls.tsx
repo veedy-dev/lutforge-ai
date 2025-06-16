@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label"
 interface ManualControlsProps {
   initialLut: string | null
   referenceImage: string | null
+  persistentState?: ColorAdjustments
+  onStateChange?: (state: ColorAdjustments) => void
 }
 
 interface ColorAdjustments {
@@ -28,8 +30,8 @@ interface ColorAdjustments {
   tint: number
 }
 
-export default function ManualControls({ initialLut, referenceImage }: ManualControlsProps) {
-  const [adjustments, setAdjustments] = useState<ColorAdjustments>({
+export default function ManualControls({ initialLut, referenceImage, persistentState, onStateChange }: ManualControlsProps) {
+  const [adjustments, setAdjustments] = useState<ColorAdjustments>(persistentState || {
     exposure: 0,
     contrast: 0,
     highlights: 0,
@@ -41,6 +43,13 @@ export default function ManualControls({ initialLut, referenceImage }: ManualCon
     temperature: 0,
     tint: 0,
   })
+
+  // Update parent state when adjustments change
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange(adjustments)
+    }
+  }, [adjustments, onStateChange])
 
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [lutFileName, setLutFileName] = useState("")
@@ -90,6 +99,65 @@ export default function ManualControls({ initialLut, referenceImage }: ManualCon
       ...prev,
       [key]: value[0],
     }))
+  }
+
+  const resetAdjustmentToZero = (key: keyof ColorAdjustments) => {
+    setAdjustments(prev => ({
+      ...prev,
+      [key]: 0
+    }))
+  }
+
+  // Custom slider component with double-click reset
+  const ResetSlider = ({ 
+    label, 
+    value, 
+    adjustmentKey, 
+    min = -100, 
+    max = 100, 
+    step = 1 
+  }: {
+    label: string
+    value: number
+    adjustmentKey: keyof ColorAdjustments
+    min?: number
+    max?: number
+    step?: number
+  }) => {
+    let clickTimeout: NodeJS.Timeout | null = null
+
+    const handleSliderClick = (e: React.MouseEvent) => {
+      if (clickTimeout) {
+        // Double click - reset to zero
+        clearTimeout(clickTimeout)
+        clickTimeout = null
+        resetAdjustmentToZero(adjustmentKey)
+      } else {
+        // Single click - wait for potential double click
+        clickTimeout = setTimeout(() => {
+          clickTimeout = null
+        }, 300)
+      }
+    }
+
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-2">
+          <label className="text-sm font-medium">{label}</label>
+          <span className="text-sm text-muted-foreground">{value}</span>
+        </div>
+        <div onClick={handleSliderClick}>
+          <Slider
+            value={[value]}
+            onValueChange={(value) => updateAdjustment(adjustmentKey, value)}
+            min={min}
+            max={max}
+            step={step}
+            className="w-full"
+          />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -200,95 +268,36 @@ export default function ManualControls({ initialLut, referenceImage }: ManualCon
                 <CardTitle>Basic Adjustments</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium">Exposure</label>
-                    <span className="text-sm text-muted-foreground">{adjustments.exposure}</span>
-                  </div>
-                  <Slider
-                    value={[adjustments.exposure]}
-                    onValueChange={(value) => updateAdjustment("exposure", value)}
-                    min={-100}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium">Contrast</label>
-                    <span className="text-sm text-muted-foreground">{adjustments.contrast}</span>
-                  </div>
-                  <Slider
-                    value={[adjustments.contrast]}
-                    onValueChange={(value) => updateAdjustment("contrast", value)}
-                    min={-100}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium">Highlights</label>
-                    <span className="text-sm text-muted-foreground">{adjustments.highlights}</span>
-                  </div>
-                  <Slider
-                    value={[adjustments.highlights]}
-                    onValueChange={(value) => updateAdjustment("highlights", value)}
-                    min={-100}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium">Shadows</label>
-                    <span className="text-sm text-muted-foreground">{adjustments.shadows}</span>
-                  </div>
-                  <Slider
-                    value={[adjustments.shadows]}
-                    onValueChange={(value) => updateAdjustment("shadows", value)}
-                    min={-100}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium">Whites</label>
-                    <span className="text-sm text-muted-foreground">{adjustments.whites}</span>
-                  </div>
-                  <Slider
-                    value={[adjustments.whites]}
-                    onValueChange={(value) => updateAdjustment("whites", value)}
-                    min={-100}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium">Blacks</label>
-                    <span className="text-sm text-muted-foreground">{adjustments.blacks}</span>
-                  </div>
-                  <Slider
-                    value={[adjustments.blacks]}
-                    onValueChange={(value) => updateAdjustment("blacks", value)}
-                    min={-100}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
+                <ResetSlider 
+                  label="Exposure" 
+                  value={adjustments.exposure} 
+                  adjustmentKey="exposure" 
+                />
+                <ResetSlider 
+                  label="Contrast" 
+                  value={adjustments.contrast} 
+                  adjustmentKey="contrast" 
+                />
+                <ResetSlider 
+                  label="Highlights" 
+                  value={adjustments.highlights} 
+                  adjustmentKey="highlights" 
+                />
+                <ResetSlider 
+                  label="Shadows" 
+                  value={adjustments.shadows} 
+                  adjustmentKey="shadows" 
+                />
+                <ResetSlider 
+                  label="Whites" 
+                  value={adjustments.whites} 
+                  adjustmentKey="whites" 
+                />
+                <ResetSlider 
+                  label="Blacks" 
+                  value={adjustments.blacks} 
+                  adjustmentKey="blacks" 
+                />
               </CardContent>
             </Card>
 
@@ -298,67 +307,29 @@ export default function ManualControls({ initialLut, referenceImage }: ManualCon
                 <CardTitle>Color Adjustments</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium">Saturation</label>
-                    <span className="text-sm text-muted-foreground">{adjustments.saturation}</span>
-                  </div>
-                  <Slider
-                    value={[adjustments.saturation]}
-                    onValueChange={(value) => updateAdjustment("saturation", value)}
-                    min={-100}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium">Vibrance</label>
-                    <span className="text-sm text-muted-foreground">{adjustments.vibrance}</span>
-                  </div>
-                  <Slider
-                    value={[adjustments.vibrance]}
-                    onValueChange={(value) => updateAdjustment("vibrance", value)}
-                    min={-100}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
+                <ResetSlider 
+                  label="Saturation" 
+                  value={adjustments.saturation} 
+                  adjustmentKey="saturation" 
+                />
+                <ResetSlider 
+                  label="Vibrance" 
+                  value={adjustments.vibrance} 
+                  adjustmentKey="vibrance" 
+                />
 
                 <Separator />
 
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium">Temperature</label>
-                    <span className="text-sm text-muted-foreground">{adjustments.temperature}</span>
-                  </div>
-                  <Slider
-                    value={[adjustments.temperature]}
-                    onValueChange={(value) => updateAdjustment("temperature", value)}
-                    min={-100}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-sm font-medium">Tint</label>
-                    <span className="text-sm text-muted-foreground">{adjustments.tint}</span>
-                  </div>
-                  <Slider
-                    value={[adjustments.tint]}
-                    onValueChange={(value) => updateAdjustment("tint", value)}
-                    min={-100}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
+                <ResetSlider 
+                  label="Temperature" 
+                  value={adjustments.temperature} 
+                  adjustmentKey="temperature" 
+                />
+                <ResetSlider 
+                  label="Tint" 
+                  value={adjustments.tint} 
+                  adjustmentKey="tint" 
+                />
 
                 <Separator />
 
