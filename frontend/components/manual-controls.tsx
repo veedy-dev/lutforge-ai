@@ -44,7 +44,6 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
     tint: 0,
   })
 
-  // Update parent state when adjustments change
   useEffect(() => {
     if (onStateChange) {
       onStateChange(adjustments)
@@ -79,13 +78,13 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
   }
 
   const generateModifiedLut = () => {
-    // In a real implementation, this would generate a new LUT based on the adjustments
+
     const lutData = generateLutFromAdjustments(adjustments)
     const fileName = lutFileName.trim() || generateRandomFileName()
-
     const blob = new Blob([lutData], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
+
     a.href = url
     a.download = `${fileName}.cube`
     document.body.appendChild(a)
@@ -108,14 +107,13 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
     }))
   }
 
-  // Custom slider component with double-click reset
-  const ResetSlider = ({ 
-    label, 
-    value, 
-    adjustmentKey, 
-    min = -100, 
-    max = 100, 
-    step = 1 
+  const ResetSlider = ({
+    label,
+    value,
+    adjustmentKey,
+    min = -100,
+    max = 100,
+    step = 1
   }: {
     label: string
     value: number
@@ -124,19 +122,32 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
     max?: number
     step?: number
   }) => {
-    let clickTimeout: NodeJS.Timeout | null = null
+    const [lastClickTime, setLastClickTime] = useState(0)
+    const [isDragging, setIsDragging] = useState(false)
+
+    const handleSliderMouseDown = () => {
+      setIsDragging(true)
+    }
+
+    const handleSliderMouseUp = () => {
+
+      setTimeout(() => setIsDragging(false), 50)
+    }
 
     const handleSliderClick = (e: React.MouseEvent) => {
-      if (clickTimeout) {
-        // Double click - reset to zero
-        clearTimeout(clickTimeout)
-        clickTimeout = null
+
+      if (isDragging) return
+
+      const currentTime = Date.now()
+      const timeDiff = currentTime - lastClickTime
+
+      if (timeDiff < 300 && timeDiff > 0) {
+
         resetAdjustmentToZero(adjustmentKey)
+        setLastClickTime(0)
       } else {
-        // Single click - wait for potential double click
-        clickTimeout = setTimeout(() => {
-          clickTimeout = null
-        }, 300)
+
+        setLastClickTime(currentTime)
       }
     }
 
@@ -146,7 +157,11 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
           <label className="text-sm font-medium">{label}</label>
           <span className="text-sm text-muted-foreground">{value}</span>
         </div>
-        <div onClick={handleSliderClick}>
+        <div
+          onClick={handleSliderClick}
+          onMouseDown={handleSliderMouseDown}
+          onMouseUp={handleSliderMouseUp}
+        >
           <Slider
             value={[value]}
             onValueChange={(value) => updateAdjustment(adjustmentKey, value)}
@@ -216,7 +231,6 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                         mixBlendMode: 'overlay',
                       }}
                     />
-                    
                     {/* Highlights and Shadows overlay */}
                     <div
                       className="absolute inset-0 pointer-events-none rounded-lg"
@@ -236,7 +250,6 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                         mixBlendMode: 'overlay',
                       }}
                     />
-                    
                     {/* Blacks adjustment overlay */}
                     {adjustments.blacks !== 0 && (
                       <div
@@ -268,35 +281,35 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                 <CardTitle>Basic Adjustments</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <ResetSlider 
-                  label="Exposure" 
-                  value={adjustments.exposure} 
-                  adjustmentKey="exposure" 
+                <ResetSlider
+                  label="Exposure"
+                  value={adjustments.exposure}
+                  adjustmentKey="exposure"
                 />
-                <ResetSlider 
-                  label="Contrast" 
-                  value={adjustments.contrast} 
-                  adjustmentKey="contrast" 
+                <ResetSlider
+                  label="Contrast"
+                  value={adjustments.contrast}
+                  adjustmentKey="contrast"
                 />
-                <ResetSlider 
-                  label="Highlights" 
-                  value={adjustments.highlights} 
-                  adjustmentKey="highlights" 
+                <ResetSlider
+                  label="Highlights"
+                  value={adjustments.highlights}
+                  adjustmentKey="highlights"
                 />
-                <ResetSlider 
-                  label="Shadows" 
-                  value={adjustments.shadows} 
-                  adjustmentKey="shadows" 
+                <ResetSlider
+                  label="Shadows"
+                  value={adjustments.shadows}
+                  adjustmentKey="shadows"
                 />
-                <ResetSlider 
-                  label="Whites" 
-                  value={adjustments.whites} 
-                  adjustmentKey="whites" 
+                <ResetSlider
+                  label="Whites"
+                  value={adjustments.whites}
+                  adjustmentKey="whites"
                 />
-                <ResetSlider 
-                  label="Blacks" 
-                  value={adjustments.blacks} 
-                  adjustmentKey="blacks" 
+                <ResetSlider
+                  label="Blacks"
+                  value={adjustments.blacks}
+                  adjustmentKey="blacks"
                 />
               </CardContent>
             </Card>
@@ -307,28 +320,28 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                 <CardTitle>Color Adjustments</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <ResetSlider 
-                  label="Saturation" 
-                  value={adjustments.saturation} 
-                  adjustmentKey="saturation" 
+                <ResetSlider
+                  label="Saturation"
+                  value={adjustments.saturation}
+                  adjustmentKey="saturation"
                 />
-                <ResetSlider 
-                  label="Vibrance" 
-                  value={adjustments.vibrance} 
-                  adjustmentKey="vibrance" 
+                <ResetSlider
+                  label="Vibrance"
+                  value={adjustments.vibrance}
+                  adjustmentKey="vibrance"
                 />
 
                 <Separator />
 
-                <ResetSlider 
-                  label="Temperature" 
-                  value={adjustments.temperature} 
-                  adjustmentKey="temperature" 
+                <ResetSlider
+                  label="Temperature"
+                  value={adjustments.temperature}
+                  adjustmentKey="temperature"
                 />
-                <ResetSlider 
-                  label="Tint" 
-                  value={adjustments.tint} 
-                  adjustmentKey="tint" 
+                <ResetSlider
+                  label="Tint"
+                  value={adjustments.tint}
+                  adjustmentKey="tint"
                 />
 
                 <Separator />
@@ -362,7 +375,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
 }
 
 function generateLutFromAdjustments(adjustments: ColorAdjustments): string {
-  // This is a simplified LUT generation - in reality, this would be much more complex
+
   return `# Generated LUT with manual adjustments
 TITLE "Modified LUT"
 DOMAIN_MIN 0.0 0.0 0.0
