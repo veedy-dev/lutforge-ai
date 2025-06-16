@@ -48,19 +48,22 @@ export default function Home()
   const handleLutGenerated = (lut: string | null) =>
   {
     setGeneratedLut(lut);
-    // Reset manual controls when a new LUT is generated
-    setManualControlsState({
-      exposure: 0,
-      contrast: 0,
-      highlights: 0,
-      shadows: 0,
-      whites: 0,
-      blacks: 0,
-      saturation: 0,
-      vibrance: 0,
-      temperature: 0,
-      tint: 0,
-    });
+
+    if (activeTab === "generate")
+    {
+      setManualControlsState({
+        exposure: 0,
+        contrast: 0,
+        highlights: 0,
+        shadows: 0,
+        whites: 0,
+        blacks: 0,
+        saturation: 0,
+        vibrance: 0,
+        temperature: 0,
+        tint: 0,
+      });
+    }
   };
 
   const handleManualControlsReset = () =>
@@ -81,15 +84,12 @@ export default function Home()
 
   const handleExportToApply = () =>
   {
-    // Generate filename for manual LUT
     const timestamp = new Date().toISOString().slice(0, 16).replace(/[:-]/g, "");
     const filename = `Manual_LUT_${timestamp}`;
     setManualLutFileName(filename);
 
-    // Navigate to Apply to Image tab
     setActiveTab("apply");
 
-    // Show success message
     toast.success("LUT exported successfully!", {
       description: `${filename}.cube is now ready in Apply to Image tab`,
     });

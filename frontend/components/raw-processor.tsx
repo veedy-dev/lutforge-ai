@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Download, ImageIcon, Upload } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 
 import { Input } from "@/components/ui/input";
@@ -55,6 +55,18 @@ export default function RawProcessor(
   );
   const [customLutData, setCustomLutData] = useState<string | null>(null);
   const [customLutFileName, setCustomLutFileName] = useState<string | null>(null);
+
+  useEffect(() =>
+  {
+    if (rawImage && manualLutData && manualAdjustments && processedImage)
+    {
+      const hasAdjustments = Object.values(manualAdjustments).some(val => val !== 0);
+      if (hasAdjustments)
+      {
+        setProcessedImage(null);
+      }
+    }
+  }, [manualAdjustments, manualLutData]);
 
   const updateState = (updates: Partial<RawProcessorState>) =>
   {
@@ -182,6 +194,9 @@ export default function RawProcessor(
 
     setIsProcessing(true);
 
+    setProcessedImage(null);
+    updateState({ processedImage: null });
+
     setTimeout(() =>
     {
       const canvas = document.createElement("canvas");
@@ -190,6 +205,7 @@ export default function RawProcessor(
 
       img.onload = () =>
       {
+        console.log("Image loaded, starting processing...");
         canvas.width = img.width;
         canvas.height = img.height;
         ctx?.drawImage(img, 0, 0);
@@ -203,8 +219,14 @@ export default function RawProcessor(
             filterString +=
               ` contrast(1.3) saturate(1.4) hue-rotate(15deg) brightness(1.1) sepia(0.1)`;
           }
-          else if (manualAdjustments && Object.values(manualAdjustments).some(val => val !== 0))
+          else if (
+            manualLutData && manualAdjustments
+            && Object.values(manualAdjustments).some(val => val !== 0)
+          )
           {
+            console.log("Manual adjustments received:", manualAdjustments);
+            console.log("Tint value:", manualAdjustments.tint);
+
             const brightness = 1
               + (manualAdjustments.exposure + manualAdjustments.whites * 0.3) / 100;
             const contrast = 1
@@ -215,17 +237,80 @@ export default function RawProcessor(
 
             filterString +=
               ` brightness(${brightness}) contrast(${contrast}) saturate(${saturation})`;
+
+            if (manualAdjustments.temperature !== 0)
+            {
+              const tempIntensity = Math.abs(manualAdjustments.temperature) / 100;
+
+              if (manualAdjustments.temperature < 0)
+              {
+                const warmth = tempIntensity;
+                filterString += ` sepia(${warmth * 0.6}) saturate(${1 + warmth * 0.8}) hue-rotate(${
+                  -20 * warmth
+                }deg)`;
+              }
+              else
+              {
+                const coolness = tempIntensity;
+                filterString += ` hue-rotate(${200 * coolness}deg) saturate(${
+                  1 + coolness * 0.4
+                }) brightness(${1 + coolness * 0.1})`;
+              }
+            }
+
+            ctx.filter = filterString;
+            ctx.drawImage(img, 0, 0);
+
+            if (manualAdjustments.tint !== 0)
+            {
+              console.log("Applying tint overlay:", manualAdjustments.tint);
+
+              ctx.globalCompositeOperation = "color";
+
+              const tintIntensity = Math.abs(manualAdjustments.tint) / 100;
+              const opacity = tintIntensity * 0.25;
+              ctx.globalAlpha = opacity;
+
+              if (manualAdjustments.tint < 0)
+              {
+                ctx.fillStyle = "rgb(0, 255, 0)";
+                console.log("Applying GREEN overlay, opacity:", opacity);
+              }
+              else
+              {
+                ctx.fillStyle = "rgb(255, 0, 255)";
+                console.log("Applying MAGENTA overlay, opacity:", opacity);
+              }
+
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+              ctx.globalCompositeOperation = "source-over";
+              ctx.globalAlpha = 1.0;
+              ctx.filter = "none";
+            }
           }
           else
           {
-            filterString += ` contrast(1.1) saturate(1.2) brightness(1.05)`;
+            ctx.filter = `opacity(${
+              lutIntensity[0] / 100
+            }) contrast(1.1) saturate(1.2) brightness(1.05)`;
+            ctx.drawImage(img, 0, 0);
           }
 
-          ctx.filter = filterString;
-          ctx.drawImage(img, 0, 0);
+          if (
+            manualLutData && manualAdjustments && Object.values(manualAdjustments).some(val =>
+              val !== 0
+            ) && manualAdjustments.tint === 0
+          )
+          {
+            ctx.filter = filterString;
+            ctx.drawImage(img, 0, 0);
+          }
         }
 
+        console.log("Processing complete, generating data URL...");
         const processedData = canvas.toDataURL();
+        console.log("Setting processed image and stopping processing...");
         setProcessedImage(processedData);
         updateState({ processedImage: processedData });
         setIsProcessing(false);
@@ -448,16 +533,19 @@ export default function RawProcessor(
                   <Button onClick={applyLut} disabled={isProcessing} className="flex-1">
                     {isProcessing ? "Processing..." : "Apply LUT"}
                   </Button>
-                  {manualLutData && !customLutData && (
+                  {manualLutData && customLutData && (
                     <Button
                       onClick={() =>
                       {
                         setCustomLutData(null);
+                        setCustomLutFileName(null);
+
+                        setTimeout(() => applyLut(), 100);
                       }}
                       variant="outline"
                       size="sm"
                     >
-                      Use Manual LUT
+                      Switch to Manual LUT
                     </Button>
                   )}
                   {processedImage && (
