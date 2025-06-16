@@ -209,7 +209,7 @@ def analyze_image_with_gemini(image_data: bytes) -> str:
         raise
 
 
-def generate_parameters_with_gemini(analysis: str) -> ColorParameters:
+def generate_parameters_with_gemini(analysis: str) -> ColorParams:
     """Convert the color analysis into specific numeric parameters"""
     try:
         print("Converting analysis to parameters...")
@@ -221,22 +221,24 @@ def generate_parameters_with_gemini(analysis: str) -> ColorParameters:
         
         Generate specific numeric parameters for a 3D LUT. Return a JSON object with these exact fields:
         {{
-            "exposure": <float between -2.0 and 2.0>,
+            "black_point": <float between 0.0 and 0.1>,
+            "white_point": <float between 0.9 and 1.0>,
             "contrast": <float between 0.5 and 2.0>,
-            "highlights": <float between -100 and 100>,
-            "shadows": <float between -100 and 100>,
-            "whites": <float between -100 and 100>,
-            "blacks": <float between -100 and 100>,
             "saturation": <float between 0.0 and 2.0>,
-            "warmth": <float between -100 and 100>
+            "shadow_tint": {{"color": "neutral", "balance": [1.0, 1.0, 1.0]}},
+            "highlight_tint": {{"color": "neutral", "balance": [1.0, 1.0, 1.0]}},
+            "channel_adjustments": {{}}
         }}
         
-        Base values should be around:
-        - exposure: 0.0 (neutral)
-        - contrast: 1.0 (neutral)
-        - highlights/shadows/whites/blacks: 0 (neutral)
-        - saturation: 1.0 (neutral)
-        - warmth: 0 (neutral)
+        For shadow_tint and highlight_tint, use color names: "neutral", "cyan", "teal", "blue", "orange", "gold", "red", "magenta", "green"
+        Balance values are RGB multipliers between 0.8 and 1.2.
+        
+        Base neutral values:
+        - black_point: 0.0
+        - white_point: 1.0  
+        - contrast: 1.0
+        - saturation: 1.0
+        - tints: neutral with [1.0, 1.0, 1.0] balance
         
         Only deviate from neutral when the analysis specifically suggests adjustments.
         """
@@ -251,13 +253,13 @@ def generate_parameters_with_gemini(analysis: str) -> ColorParameters:
         params_dict = json.loads(json_str)
         
         print("✅ Parameters generated from analysis")
-        return ColorParameters(**params_dict)
+        return ColorParams(**params_dict)
         
     except Exception as e:
         print(f"❌ Error generating parameters: {str(e)}")
         # Fallback to neutral parameters
         print("Using neutral fallback parameters")
-        return ColorParameters()
+        return ColorParams()
 
 
 @app.get("/health")
