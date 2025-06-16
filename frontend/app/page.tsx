@@ -6,9 +6,27 @@ import RawProcessor from "@/components/raw-processor";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ImageIcon, Palette, Settings, Upload } from "lucide-react";
+import { FileText, Image, Settings, Upload } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+
+const LUTForgeLogo = ({ className = "w-8 h-8" }: { className?: string; }) => (
+  <svg viewBox="0 0 32 32" className={className}>
+    <defs>
+      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: "#a855f7", stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: "#ec4899", stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
+    <circle cx="16" cy="16" r="15" fill="url(#gradient)" />
+    <path d="M8 12 L16 8 L24 12 L16 16 Z" fill="white" opacity="0.9" />
+    <path d="M16 16 L24 12 L24 20 L16 24 Z" fill="white" opacity="0.7" />
+    <path d="M8 12 L16 16 L16 24 L8 20 Z" fill="white" opacity="0.5" />
+    <circle cx="12" cy="14" r="1" fill="white" opacity="0.8" />
+    <circle cx="20" cy="14" r="1" fill="white" opacity="0.8" />
+    <circle cx="16" cy="20" r="1" fill="white" opacity="0.8" />
+  </svg>
+);
 
 export default function Home()
 {
@@ -101,9 +119,7 @@ export default function Home()
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
-              <Palette className="w-8 h-8 text-white" />
-            </div>
+            <LUTForgeLogo className="w-12 h-12" />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               LUTForge AI
             </h1>
@@ -137,7 +153,7 @@ export default function Home()
               Manual Controls
             </TabsTrigger>
             <TabsTrigger value="apply" className="flex items-center gap-2">
-              <ImageIcon className="w-4 h-4" />
+              <Image className="w-4 h-4" />
               Apply to Image
             </TabsTrigger>
           </TabsList>
@@ -201,11 +217,12 @@ export default function Home()
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5" />
-                  Apply LUT to Images
+                  <Image className="w-5 h-5" />
+                  Apply LUT to Image
                 </CardTitle>
                 <CardDescription>
-                  Apply your generated LUT to JPEG/PNG images for quick preview and workflow testing
+                  Apply generated or custom LUTs to your images with adjustable intensity. Upload
+                  images and LUT files directly to get started.
                 </CardDescription>
               </CardHeader>
               <CardContent>

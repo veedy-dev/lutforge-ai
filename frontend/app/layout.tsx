@@ -14,6 +14,11 @@ export const metadata: Metadata = {
   title: "LUTForge AI - Professional Color Grading",
   description: "AI-powered 3D LUT generation and professional color grading tools",
   generator: "LUTForge AI",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
