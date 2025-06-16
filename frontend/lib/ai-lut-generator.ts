@@ -15,8 +15,18 @@ export async function generateLutFromImage(imageData: string): Promise<string>
     const formData = new FormData();
     formData.append("file", blob, "image.jpg");
 
-    const apiUrl = process.env.BACKEND_API_URL;
-    const baseUrl = apiUrl?.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    if (!apiUrl || apiUrl === "undefined")
+    {
+      throw new Error(
+        "Backend API URL not configured. Please set NEXT_PUBLIC_API_URL environment variable.",
+      );
+    }
+
+    const baseUrl = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
+
+    console.log("Using API URL:", baseUrl);
 
     const response = await fetch(`${baseUrl}/api/generate-lut`, {
       method: "POST",
