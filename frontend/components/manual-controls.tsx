@@ -18,6 +18,7 @@ interface ManualControlsProps
   onStateChange?: (state: ColorAdjustments) => void;
   onReset?: () => void;
   onLutGenerated?: (lut: string) => void;
+  onExportToApply?: () => void;
 }
 
 interface ColorAdjustments
@@ -35,8 +36,15 @@ interface ColorAdjustments
 }
 
 export default function ManualControls(
-  { initialLut, referenceImage, persistentState, onStateChange, onReset, onLutGenerated }:
-    ManualControlsProps,
+  {
+    initialLut,
+    referenceImage,
+    persistentState,
+    onStateChange,
+    onReset,
+    onLutGenerated,
+    onExportToApply,
+  }: ManualControlsProps,
 )
 {
   const [adjustments, setAdjustments] = useState<ColorAdjustments>(
@@ -809,10 +817,34 @@ export default function ManualControls(
                   </p>
                 </div>
 
-                <Button onClick={generateModifiedLut} className="w-full">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export Modified LUT
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() =>
+                    {
+                      const lutData = generateLutFromAdjustments(adjustments);
+                      if (onLutGenerated)
+                      {
+                        onLutGenerated(lutData);
+                      }
+                      if (onExportToApply)
+                      {
+                        onExportToApply();
+                      }
+                    }}
+                    className="flex-1"
+                    disabled={Object.values(adjustments).every(val => val === 0) && !initialLut}
+                  >
+                    Export to Apply
+                  </Button>
+                  <Button
+                    onClick={generateModifiedLut}
+                    variant="outline"
+                    disabled={Object.values(adjustments).every(val => val === 0) && !initialLut}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download LUT
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>

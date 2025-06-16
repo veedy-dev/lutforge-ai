@@ -27,10 +27,20 @@ interface RawProcessorProps
   onStateChange?: (state: RawProcessorState) => void;
   manualAdjustments?: any; // Manual control adjustments from the manual controls tab
   manualLutData?: string | null; // LUT data from manual controls
+  generatedLutFileName?: string; // Filename of the generated LUT
+  manualLutFileName?: string | null; // Filename of the manual LUT
 }
 
 export default function RawProcessor(
-  { lutData, persistentState, onStateChange, manualAdjustments, manualLutData }: RawProcessorProps,
+  {
+    lutData,
+    persistentState,
+    onStateChange,
+    manualAdjustments,
+    manualLutData,
+    generatedLutFileName,
+    manualLutFileName,
+  }: RawProcessorProps,
 )
 {
   const [rawImage, setRawImage] = useState<string | null>(persistentState?.rawImage || null);
@@ -142,10 +152,16 @@ export default function RawProcessor(
   // Determine which LUT to use and its source
   const getCurrentLut = () =>
   {
-    if (customLutData) return { lut: customLutData, source: "Custom Imported LUT" };
-    if (manualLutData) return { lut: manualLutData, source: "Manual Controls LUT" };
-    if (lutData) return { lut: lutData, source: "AI Generated LUT" };
-    return { lut: null, source: "No LUT Available" };
+    if (customLutData) return { lut: customLutData, source: "Custom Imported LUT", filename: null };
+    if (manualLutData)
+    {
+      return { lut: manualLutData, source: "Manual Controls LUT", filename: manualLutFileName };
+    }
+    if (lutData)
+    {
+      return { lut: lutData, source: "AI Generated LUT", filename: generatedLutFileName };
+    }
+    return { lut: null, source: "No LUT Available", filename: null };
   };
 
   const applyLut = async () =>
@@ -275,6 +291,31 @@ export default function RawProcessor(
             </CardContent>
           </Card>
 
+          {/* Current LUT Info */}
+          <Card className="bg-green-50 border-green-200">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <ImageIcon className="w-5 h-5 text-green-600 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-medium text-green-900 mb-1">Current LUT</h4>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-green-700 border-green-300">
+                      {getCurrentLut().source}
+                    </Badge>
+                    {getCurrentLut().filename && (
+                      <span className="text-sm text-green-700 font-medium">
+                        {getCurrentLut().filename}.cube
+                      </span>
+                    )}
+                  </div>
+                  {!getCurrentLut().filename && getCurrentLut().source !== "No LUT Available" && (
+                    <p className="text-sm text-green-600 mt-1">Ready to apply</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Upload Areas */}
           <div className="grid gap-4 md:grid-cols-2">
             {/* Image Upload */}
@@ -342,6 +383,13 @@ export default function RawProcessor(
                     <Badge variant="outline">LUT Ready</Badge>
                   </div>
                 </CardTitle>
+                {getCurrentLut().filename && (
+                  <div className="text-sm">
+                    <span className="text-green-600 font-medium">
+                      File name: {getCurrentLut().filename}.cube
+                    </span>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -388,6 +436,19 @@ export default function RawProcessor(
                   <Button onClick={applyLut} disabled={isProcessing} className="flex-1">
                     {isProcessing ? "Processing..." : "Apply LUT"}
                   </Button>
+                  {manualLutData && !customLutData && (
+                    <Button
+                      onClick={() =>
+                      {
+                        // This will make manual LUT take priority by clearing custom LUT
+                        setCustomLutData(null);
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Use Manual LUT
+                    </Button>
+                  )}
                   {processedImage && (
                     <Button onClick={downloadProcessed} variant="outline">
                       <Download className="w-4 h-4 mr-2" />

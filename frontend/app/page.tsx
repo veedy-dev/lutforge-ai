@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageIcon, Palette, Settings, Upload } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function Home()
 {
@@ -20,6 +21,7 @@ export default function Home()
     isAnalyzing: false,
     progress: 0,
     error: null as string | null,
+    generatedLut: null as string | null,
   });
   const [manualControlsState, setManualControlsState] = useState({
     exposure: 0,
@@ -40,6 +42,8 @@ export default function Home()
     processedFileName: "",
   });
   const [manualLutData, setManualLutData] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("generate");
+  const [manualLutFileName, setManualLutFileName] = useState<string | null>(null);
 
   const handleLutGenerated = (lut: string | null) =>
   {
@@ -75,6 +79,22 @@ export default function Home()
     });
   };
 
+  const handleExportToApply = () =>
+  {
+    // Generate filename for manual LUT
+    const timestamp = new Date().toISOString().slice(0, 16).replace(/[:-]/g, "");
+    const filename = `Manual_LUT_${timestamp}`;
+    setManualLutFileName(filename);
+
+    // Navigate to Apply to Image tab
+    setActiveTab("apply");
+
+    // Show success message
+    toast.success("LUT exported successfully!", {
+      description: `${filename}.cube is now ready in Apply to Image tab`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <div className="container mx-auto px-4 py-8">
@@ -106,7 +126,7 @@ export default function Home()
         </div>
 
         {/* Main Tabs */}
-        <Tabs defaultValue="generate" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="generate" className="flex items-center gap-2">
               <Upload className="w-4 h-4" />
@@ -171,6 +191,7 @@ export default function Home()
                   onStateChange={setManualControlsState}
                   onReset={handleManualControlsReset}
                   onLutGenerated={setManualLutData}
+                  onExportToApply={handleExportToApply}
                 />
               </CardContent>
             </Card>
@@ -194,6 +215,8 @@ export default function Home()
                   onStateChange={setRawProcessorState}
                   manualAdjustments={manualControlsState}
                   manualLutData={manualLutData}
+                  generatedLutFileName={lutGeneratorState.generatedFileName}
+                  manualLutFileName={manualLutFileName}
                 />
               </CardContent>
             </Card>

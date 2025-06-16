@@ -20,6 +20,7 @@ interface LutGeneratorState
   progress: number;
   error: string | null;
   uploadedImage: string | null;
+  generatedLut: string | null;
 }
 
 interface LutGeneratorProps
@@ -39,7 +40,9 @@ export default function LutGenerator(
   );
   const [isAnalyzing, setIsAnalyzing] = useState(persistentState?.isAnalyzing || false);
   const [progress, setProgress] = useState(persistentState?.progress || 0);
-  const [generatedLut, setGeneratedLut] = useState<string | null>(null);
+  const [generatedLut, setGeneratedLut] = useState<string | null>(
+    persistentState?.generatedLut || null,
+  );
   const [error, setError] = useState<string | null>(persistentState?.error || null);
   const [lutFileName, setLutFileName] = useState(persistentState?.lutFileName || "");
   const [generatedFileName, setGeneratedFileName] = useState(
@@ -57,9 +60,10 @@ export default function LutGenerator(
         isAnalyzing,
         progress,
         error,
+        generatedLut,
       });
     }
-  }, [lutFileName, generatedFileName, isAnalyzing, progress, error, onStateChange]);
+  }, [lutFileName, generatedFileName, isAnalyzing, progress, error, generatedLut, onStateChange]);
 
   const generateRandomFileName = () =>
   {
