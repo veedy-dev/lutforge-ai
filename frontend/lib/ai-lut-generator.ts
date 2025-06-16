@@ -1,6 +1,6 @@
 import getConfig from "next/config";
 
-function getApiUrl(): string
+async function getApiUrl(): Promise<string>
 {
   let apiUrl: string | undefined;
 
@@ -20,13 +20,24 @@ function getApiUrl(): string
 
   if ((!apiUrl || apiUrl === "undefined") && typeof window !== "undefined")
   {
-    apiUrl = window.__NEXT_DATA__?.props?.pageProps?.apiUrl;
+    try
+    {
+      const response = await fetch("/api/config");
+      if (response.ok)
+      {
+        const config = await response.json();
+        apiUrl = config.apiUrl;
+      }
+    }
+    catch (e)
+    {
+    }
   }
 
   if (!apiUrl || apiUrl === "undefined")
   {
     throw new Error(
-      "Backend API URL not configured. Please set NEXT_PUBLIC_API_URL environment variable.",
+      "Backend API URL not configured. Please set NEXT_PUBLIC_API_URL environment variable in Koyeb dashboard.",
     );
   }
 
@@ -50,7 +61,7 @@ export async function generateLutFromImage(imageData: string): Promise<string>
     const formData = new FormData();
     formData.append("file", blob, "image.jpg");
 
-    const apiUrl = getApiUrl();
+    const apiUrl = await getApiUrl();
     const baseUrl = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
 
     const response = await fetch(`${baseUrl}/api/generate-lut`, {
