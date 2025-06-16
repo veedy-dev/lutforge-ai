@@ -49,7 +49,6 @@ export default function LutGenerator(
     persistentState?.generatedFileName || "",
   );
 
-  // Sync state changes with parent
   useEffect(() =>
   {
     if (onStateChange)
@@ -109,7 +108,7 @@ export default function LutGenerator(
         setUploadedImage(imageData);
         onImageUploaded(imageData);
         setError(null);
-        // Reset LUT generation state when new image is uploaded
+
         setGeneratedLut(null);
         setGeneratedFileName("");
         setProgress(0);
@@ -135,7 +134,6 @@ export default function LutGenerator(
     setProgress(0);
     setError(null);
 
-    // Generate random filename if none provided
     if (!lutFileName.trim())
     {
       const randomName = generateRandomFileName();
@@ -148,7 +146,6 @@ export default function LutGenerator(
 
     try
     {
-      // Simulate progress updates
       const progressInterval = setInterval(() =>
       {
         setProgress(prev => Math.min(prev + 10, 90));
