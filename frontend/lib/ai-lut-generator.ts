@@ -1,3 +1,5 @@
+import getConfig from "next/config";
+
 export async function generateLutFromImage(imageData: string): Promise<string>
 {
   try
@@ -15,7 +17,8 @@ export async function generateLutFromImage(imageData: string): Promise<string>
     const formData = new FormData();
     formData.append("file", blob, "image.jpg");
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const { publicRuntimeConfig } = getConfig();
+    const apiUrl = publicRuntimeConfig?.apiUrl || process.env.NEXT_PUBLIC_API_URL;
 
     if (!apiUrl || apiUrl === "undefined")
     {
