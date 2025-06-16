@@ -47,7 +47,6 @@ pnpm-debug.log*
 .eslintcache
 
 # Package managers
-package-lock.json
 pnpm-lock.yaml
 yarn.lock
 
