@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { generateLutFromImage } from "@/lib/ai-lut-generator";
-import { AlertCircle, Download, ImageIcon, Sparkles, Upload } from "lucide-react";
+import { AlertCircle, Box, Download, Sparkles, Upload } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -215,7 +215,7 @@ export default function LutGenerator(
           <Card>
             <CardContent className="p-4">
               <h3 className="font-medium mb-3 flex items-center gap-2">
-                <ImageIcon className="w-4 h-4" />
+                <Box className="w-4 h-4" />
                 Reference Image
               </h3>
               <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
