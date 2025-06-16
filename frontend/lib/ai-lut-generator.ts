@@ -4,10 +4,10 @@ async function getApiUrl(): Promise<string>
 {
   let apiUrl: string | undefined;
 
-  // Method 1: Try environment variable (should be available via Docker)
+  // Method 1: Try environment variable (build-time)
   apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  // Method 2: Try runtime config as fallback
+  // Method 2: Try runtime config
   if (!apiUrl || apiUrl === "undefined")
   {
     try
@@ -21,7 +21,25 @@ async function getApiUrl(): Promise<string>
     }
   }
 
-  // Method 3: Try fetching from our config API endpoint as last resort
+  // Method 3: Try fetching from runtime config file
+  if ((!apiUrl || apiUrl === "undefined") && typeof window !== "undefined")
+  {
+    try
+    {
+      const response = await fetch("/runtime-config.json");
+      if (response.ok)
+      {
+        const config = await response.json();
+        apiUrl = config.apiUrl;
+      }
+    }
+    catch (e)
+    {
+      // Runtime config file failed
+    }
+  }
+
+  // Method 4: Try fetching from our config API endpoint as last resort
   if ((!apiUrl || apiUrl === "undefined") && typeof window !== "undefined")
   {
     try
