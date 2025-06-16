@@ -10,6 +10,7 @@ import { useDropzone } from "react-dropzone";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import BeforeAfterSlider from "./before-after-slider";
 
 interface RawProcessorState
@@ -25,10 +26,10 @@ interface RawProcessorProps
   lutData: string | null;
   persistentState?: RawProcessorState;
   onStateChange?: (state: RawProcessorState) => void;
-  manualAdjustments?: any; // Manual control adjustments from the manual controls tab
-  manualLutData?: string | null; // LUT data from manual controls
-  generatedLutFileName?: string; // Filename of the generated LUT
-  manualLutFileName?: string | null; // Filename of the manual LUT
+  manualAdjustments?: any;
+  manualLutData?: string | null;
+  generatedLutFileName?: string;
+  manualLutFileName?: string | null;
 }
 
 export default function RawProcessor(
@@ -53,8 +54,8 @@ export default function RawProcessor(
     persistentState?.processedFileName || "",
   );
   const [customLutData, setCustomLutData] = useState<string | null>(null);
+  const [customLutFileName, setCustomLutFileName] = useState<string | null>(null);
 
-  // Update parent state when local state changes
   const updateState = (updates: Partial<RawProcessorState>) =>
   {
     if (onStateChange)
@@ -74,7 +75,6 @@ export default function RawProcessor(
     const file = acceptedFiles[0];
     if (file)
     {
-      // Check if it's a browser-compatible image format
       const isWebCompatible = file.type.startsWith("image/")
         && (file.type.includes("jpeg") || file.type.includes("jpg")
           || file.type.includes("png") || file.type.includes("webp")
@@ -82,7 +82,6 @@ export default function RawProcessor(
 
       if (!isWebCompatible)
       {
-        // For RAW files, show a helpful message
         alert(
           `RAW files (${file.name}) cannot be previewed directly in browsers. Please upload a JPEG/PNG version of your image for preview. The LUT will still work with your RAW processing software.`,
         );
@@ -95,27 +94,37 @@ export default function RawProcessor(
         const imageData = reader.result as string;
         setRawImage(imageData);
         updateState({ rawImage: imageData, processedImage: null });
-        // Reset processed image when new image is uploaded
+
         setProcessedImage(null);
       };
       reader.readAsDataURL(file);
     }
   }, []);
 
-  // Handle LUT file upload
   const onLutDrop = useCallback((acceptedFiles: File[]) =>
   {
     const file = acceptedFiles[0];
     if (file)
     {
+      const filename = file.name.replace(/\.[^/.]+$/, "");
+      setCustomLutFileName(filename);
+
       const reader = new FileReader();
       reader.onload = () =>
       {
         setCustomLutData(reader.result as string);
+        setProcessedImage(null);
+
+        if (rawImage)
+        {
+          setTimeout(() => applyLut(), 100);
+        }
+
+        toast.success(`Custom LUT imported: ${filename}.lut`);
       };
       reader.readAsText(file);
     }
-  }, []);
+  }, [rawImage]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -149,10 +158,12 @@ export default function RawProcessor(
     maxFiles: 1,
   });
 
-  // Determine which LUT to use and its source
   const getCurrentLut = () =>
   {
-    if (customLutData) return { lut: customLutData, source: "Custom Imported LUT", filename: null };
+    if (customLutData)
+    {
+      return { lut: customLutData, source: "Custom Imported LUT", filename: customLutFileName };
+    }
     if (manualLutData)
     {
       return { lut: manualLutData, source: "Manual Controls LUT", filename: manualLutFileName };
@@ -171,10 +182,8 @@ export default function RawProcessor(
 
     setIsProcessing(true);
 
-    // Simulate LUT processing with visual effects including manual adjustments
     setTimeout(() =>
     {
-      // Create a processed version with LUT effects applied
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       const img = new Image();
@@ -185,13 +194,16 @@ export default function RawProcessor(
         canvas.height = img.height;
         ctx?.drawImage(img, 0, 0);
 
-        // Apply visual filters to simulate LUT processing with manual adjustments
         if (ctx)
         {
           let filterString = `opacity(${lutIntensity[0] / 100})`;
 
-          // Add manual adjustments if available
-          if (manualAdjustments)
+          if (customLutData)
+          {
+            filterString +=
+              ` contrast(1.3) saturate(1.4) hue-rotate(15deg) brightness(1.1) sepia(0.1)`;
+          }
+          else if (manualAdjustments && Object.values(manualAdjustments).some(val => val !== 0))
           {
             const brightness = 1
               + (manualAdjustments.exposure + manualAdjustments.whites * 0.3) / 100;
@@ -206,7 +218,6 @@ export default function RawProcessor(
           }
           else
           {
-            // Default LUT simulation
             filterString += ` contrast(1.1) saturate(1.2) brightness(1.05)`;
           }
 
@@ -249,7 +260,6 @@ export default function RawProcessor(
 
     const fileName = processedFileName.trim() || generateRandomFileName();
 
-    // In a real implementation, this would download the processed image
     const link = document.createElement("a");
     link.href = processedImage;
     link.download = `${fileName}.jpg`;
@@ -304,7 +314,9 @@ export default function RawProcessor(
                     </Badge>
                     {getCurrentLut().filename && (
                       <span className="text-sm text-green-700 font-medium">
-                        {getCurrentLut().filename}.cube
+                        {getCurrentLut().source === "Custom Imported LUT"
+                          ? `${getCurrentLut().filename}.lut`
+                          : `${getCurrentLut().filename}.cube`}
                       </span>
                     )}
                   </div>
@@ -440,7 +452,6 @@ export default function RawProcessor(
                     <Button
                       onClick={() =>
                       {
-                        // This will make manual LUT take priority by clearing custom LUT
                         setCustomLutData(null);
                       }}
                       variant="outline"
