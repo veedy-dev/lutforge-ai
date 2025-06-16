@@ -12,6 +12,14 @@ import RawProcessor from "@/components/raw-processor"
 export default function Home() {
   const [generatedLut, setGeneratedLut] = useState<string | null>(null)
   const [referenceImage, setReferenceImage] = useState<string | null>(null)
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+  const [lutGeneratorState, setLutGeneratorState] = useState({
+    lutFileName: "",
+    generatedFileName: "",
+    isAnalyzing: false,
+    progress: 0,
+    error: null as string | null,
+  })
   const [manualControlsState, setManualControlsState] = useState({
     exposure: 0,
     contrast: 0,
@@ -84,7 +92,18 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <LutGenerator onLutGenerated={setGeneratedLut} onImageUploaded={setReferenceImage} />
+                <LutGenerator
+                  onLutGenerated={setGeneratedLut}
+                  onImageUploaded={(image) => {
+                    setReferenceImage(image)
+                    setUploadedImage(image)
+                  }}
+                  persistentState={{
+                    uploadedImage,
+                    ...lutGeneratorState
+                  }}
+                  onStateChange={setLutGeneratorState}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -101,8 +120,8 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ManualControls 
-                  initialLut={generatedLut} 
+                <ManualControls
+                  initialLut={generatedLut}
                   referenceImage={referenceImage}
                   persistentState={manualControlsState}
                   onStateChange={setManualControlsState}
