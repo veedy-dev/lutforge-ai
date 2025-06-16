@@ -102,6 +102,7 @@ keys/
 # Misc
 memory-bank/
 backup/
+projectBrief.md
 
 # OS generated files
 .fuse_hidden*

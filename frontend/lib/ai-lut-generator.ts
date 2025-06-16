@@ -17,8 +17,11 @@ export async function generateLutFromImage(imageData: string): Promise<string>
     const formData = new FormData();
     formData.append("file", blob, "image.jpg");
 
+    // Get API URL from environment variable or use localhost as fallback
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
     // Send image file to our FastAPI backend
-    const response = await fetch("http://localhost:8000/api/generate-lut", {
+    const response = await fetch(`${apiUrl}/api/generate-lut`, {
       method: "POST",
       body: formData,
     });
