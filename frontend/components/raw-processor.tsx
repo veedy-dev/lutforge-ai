@@ -27,11 +27,11 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
     const file = acceptedFiles[0]
     if (file) {
       // Check if it's a browser-compatible image format
-      const isWebCompatible = file.type.startsWith('image/') && 
-        (file.type.includes('jpeg') || file.type.includes('jpg') || 
-         file.type.includes('png') || file.type.includes('webp') || 
-         file.type.includes('tiff'))
-      
+      const isWebCompatible = file.type.startsWith('image/') &&
+        (file.type.includes('jpeg') || file.type.includes('jpg') ||
+          file.type.includes('png') || file.type.includes('webp') ||
+          file.type.includes('tiff'))
+
       if (!isWebCompatible) {
         // For RAW files, show a helpful message
         alert(`RAW files (${file.name}) cannot be previewed directly in browsers. Please upload a JPEG/PNG version of your image for preview. The LUT will still work with your RAW processing software.`)
@@ -105,19 +105,18 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
       {lutData && (
         <>
           {/* Information Card */}
-          <Card className="bg-amber-50 border-amber-200">
+          <Card className="bg-blue-50 border-blue-200">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <ImageIcon className="w-5 h-5 text-amber-600 mt-0.5" />
+                <ImageIcon className="-5 h-5 text-blue-600 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-amber-900 mb-1">Professional Workflow Note</h4>
-                  <p className="text-sm text-amber-700 mb-2">
+                  <h4 className="font-medium text-blue-900 mb-1">Professional Workflow Note</h4>
+                  <p className="text-sm text-blue-700 mb-2">
                     <strong>For Quick Preview:</strong> This JPEG/PNG workflow is convenient for testing and visualization.
                   </p>
-                  <p className="text-sm text-amber-700">
-                    <strong>For Professional Results:</strong> Apply LUTs to RAW files within Lightroom, Capture One, or DaVinci Resolve 
-                    to realize the full potential of both your image data and the LUT. RAW processing remains the industry standard 
-                    for accurate, high-quality color grading.
+                  <p className="text-sm text-blue-700">
+                    <strong>For Professional Results:</strong> LUT preview is limited to JPEG/PNG formats.
+                    For best results, apply LUTs to RAW files using dedicated photo or video editing software to fully utilize your image data and achieve high-quality color grading.
                   </p>
                 </div>
               </div>
@@ -127,9 +126,8 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
           {/* Upload Area */}
           <div
             {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-              isDragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
-            }`}
+            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:border-blue-400 hover:bg-gray-50"
+              }`}
           >
             <input {...getInputProps()} />
             <div className="flex flex-col items-center gap-4">
@@ -262,8 +260,8 @@ export default function RawProcessor({ lutData }: RawProcessorProps) {
                         style={
                           processedImage
                             ? {
-                                filter: `contrast(1.1) saturate(1.2) opacity(${lutIntensity[0] / 100})`,
-                              }
+                              filter: `contrast(1.1) saturate(1.2) opacity(${lutIntensity[0] / 100})`,
+                            }
                             : {}
                         }
                       />
