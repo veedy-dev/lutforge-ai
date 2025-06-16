@@ -122,55 +122,33 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
     max?: number
     step?: number
   }) => {
-    const [lastClickTime, setLastClickTime] = useState(0)
-    const [isDragging, setIsDragging] = useState(false)
-
-    const handleSliderMouseDown = () => {
-      setIsDragging(true)
-    }
-
-    const handleSliderMouseUp = () => {
-
-      setTimeout(() => setIsDragging(false), 50)
-    }
-
-    const handleSliderClick = (e: React.MouseEvent) => {
-
-      if (isDragging) return
-
-      const currentTime = Date.now()
-      const timeDiff = currentTime - lastClickTime
-
-      if (timeDiff < 300 && timeDiff > 0) {
-
-        resetAdjustmentToZero(adjustmentKey)
-        setLastClickTime(0)
-      } else {
-
-        setLastClickTime(currentTime)
-      }
-    }
-
     return (
       <div>
         <div className="flex justify-between items-center mb-2">
           <label className="text-sm font-medium">{label}</label>
-          <span className="text-sm text-muted-foreground">{value}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">{value}</span>
+            {value !== 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => resetAdjustmentToZero(adjustmentKey)}
+                className="h-6 w-6 p-0 hover:bg-muted"
+                title="Reset to 0"
+              >
+                <RotateCcw className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         </div>
-        <div
-          onClick={handleSliderClick}
-          onMouseDown={handleSliderMouseDown}
-          onMouseUp={handleSliderMouseUp}
-        >
-          <Slider
-            value={[value]}
-            onValueChange={(value) => updateAdjustment(adjustmentKey, value)}
-            min={min}
-            max={max}
-            step={step}
-            className="w-full"
-          />
-        </div>
+        <Slider
+          value={[value]}
+          onValueChange={(value) => updateAdjustment(adjustmentKey, value)}
+          min={min}
+          max={max}
+          step={step}
+          className="w-full"
+        />
       </div>
     )
   }
