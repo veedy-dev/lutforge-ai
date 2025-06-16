@@ -280,6 +280,18 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "message": "LutForge AI Backend is running"}
 
+@app.get("/test-gemini")
+async def test_gemini():
+    """Test Gemini API connection"""
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Simple test prompt
+        response = model.generate_content("Say 'Hello from Gemini API'")
+        return {"status": "success", "gemini_response": response.text}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
 @app.post("/api/generate-lut")
 async def generate_lut(file: UploadFile = File(...)):
     # Validate file type
