@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
@@ -13,8 +13,6 @@ import { Label } from "@/components/ui/label"
 interface ManualControlsProps {
   initialLut: string | null
   referenceImage: string | null
-  persistentState?: ColorAdjustments
-  onStateChange?: (state: ColorAdjustments) => void
 }
 
 interface ColorAdjustments {
@@ -30,8 +28,8 @@ interface ColorAdjustments {
   tint: number
 }
 
-export default function ManualControls({ initialLut, referenceImage, persistentState, onStateChange }: ManualControlsProps) {
-  const [adjustments, setAdjustments] = useState<ColorAdjustments>(persistentState || {
+export default function ManualControls({ initialLut, referenceImage }: ManualControlsProps) {
+  const [adjustments, setAdjustments] = useState<ColorAdjustments>({
     exposure: 0,
     contrast: 0,
     highlights: 0,
@@ -43,12 +41,6 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
     temperature: 0,
     tint: 0,
   })
-
-  useEffect(() => {
-    if (onStateChange) {
-      onStateChange(adjustments)
-    }
-  }, [adjustments, onStateChange])
 
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [lutFileName, setLutFileName] = useState("")
@@ -78,13 +70,13 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
   }
 
   const generateModifiedLut = () => {
-
+    // In a real implementation, this would generate a new LUT based on the adjustments
     const lutData = generateLutFromAdjustments(adjustments)
     const fileName = lutFileName.trim() || generateRandomFileName()
+
     const blob = new Blob([lutData], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
-
     a.href = url
     a.download = `${fileName}.cube`
     document.body.appendChild(a)
@@ -99,15 +91,6 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
       [key]: value[0],
     }))
   }
-
-  const resetAdjustmentToZero = (key: keyof ColorAdjustments) => {
-    setAdjustments(prev => ({
-      ...prev,
-      [key]: 0
-    }))
-  }
-
-
 
   return (
     <div className="space-y-6">
@@ -165,6 +148,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                         mixBlendMode: 'overlay',
                       }}
                     />
+                    
                     {/* Highlights and Shadows overlay */}
                     <div
                       className="absolute inset-0 pointer-events-none rounded-lg"
@@ -184,6 +168,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                         mixBlendMode: 'overlay',
                       }}
                     />
+                    
                     {/* Blacks adjustment overlay */}
                     {adjustments.blacks !== 0 && (
                       <div
@@ -218,20 +203,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-sm font-medium">Exposure</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{adjustments.exposure}</span>
-                      {adjustments.exposure !== 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetAdjustmentToZero("exposure")}
-                          className="h-6 w-6 p-0 hover:bg-muted"
-                          title="Reset to 0"
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                    <span className="text-sm text-muted-foreground">{adjustments.exposure}</span>
                   </div>
                   <Slider
                     value={[adjustments.exposure]}
@@ -246,20 +218,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-sm font-medium">Contrast</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{adjustments.contrast}</span>
-                      {adjustments.contrast !== 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetAdjustmentToZero("contrast")}
-                          className="h-6 w-6 p-0 hover:bg-muted"
-                          title="Reset to 0"
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                    <span className="text-sm text-muted-foreground">{adjustments.contrast}</span>
                   </div>
                   <Slider
                     value={[adjustments.contrast]}
@@ -274,20 +233,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-sm font-medium">Highlights</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{adjustments.highlights}</span>
-                      {adjustments.highlights !== 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetAdjustmentToZero("highlights")}
-                          className="h-6 w-6 p-0 hover:bg-muted"
-                          title="Reset to 0"
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                    <span className="text-sm text-muted-foreground">{adjustments.highlights}</span>
                   </div>
                   <Slider
                     value={[adjustments.highlights]}
@@ -302,20 +248,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-sm font-medium">Shadows</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{adjustments.shadows}</span>
-                      {adjustments.shadows !== 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetAdjustmentToZero("shadows")}
-                          className="h-6 w-6 p-0 hover:bg-muted"
-                          title="Reset to 0"
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                    <span className="text-sm text-muted-foreground">{adjustments.shadows}</span>
                   </div>
                   <Slider
                     value={[adjustments.shadows]}
@@ -330,20 +263,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-sm font-medium">Whites</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{adjustments.whites}</span>
-                      {adjustments.whites !== 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetAdjustmentToZero("whites")}
-                          className="h-6 w-6 p-0 hover:bg-muted"
-                          title="Reset to 0"
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                    <span className="text-sm text-muted-foreground">{adjustments.whites}</span>
                   </div>
                   <Slider
                     value={[adjustments.whites]}
@@ -358,20 +278,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-sm font-medium">Blacks</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{adjustments.blacks}</span>
-                      {adjustments.blacks !== 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetAdjustmentToZero("blacks")}
-                          className="h-6 w-6 p-0 hover:bg-muted"
-                          title="Reset to 0"
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                    <span className="text-sm text-muted-foreground">{adjustments.blacks}</span>
                   </div>
                   <Slider
                     value={[adjustments.blacks]}
@@ -394,20 +301,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-sm font-medium">Saturation</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{adjustments.saturation}</span>
-                      {adjustments.saturation !== 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetAdjustmentToZero("saturation")}
-                          className="h-6 w-6 p-0 hover:bg-muted"
-                          title="Reset to 0"
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                    <span className="text-sm text-muted-foreground">{adjustments.saturation}</span>
                   </div>
                   <Slider
                     value={[adjustments.saturation]}
@@ -422,20 +316,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-sm font-medium">Vibrance</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{adjustments.vibrance}</span>
-                      {adjustments.vibrance !== 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetAdjustmentToZero("vibrance")}
-                          className="h-6 w-6 p-0 hover:bg-muted"
-                          title="Reset to 0"
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                    <span className="text-sm text-muted-foreground">{adjustments.vibrance}</span>
                   </div>
                   <Slider
                     value={[adjustments.vibrance]}
@@ -452,20 +333,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-sm font-medium">Temperature</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{adjustments.temperature}</span>
-                      {adjustments.temperature !== 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetAdjustmentToZero("temperature")}
-                          className="h-6 w-6 p-0 hover:bg-muted"
-                          title="Reset to 0"
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                    <span className="text-sm text-muted-foreground">{adjustments.temperature}</span>
                   </div>
                   <Slider
                     value={[adjustments.temperature]}
@@ -480,20 +348,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="text-sm font-medium">Tint</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{adjustments.tint}</span>
-                      {adjustments.tint !== 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resetAdjustmentToZero("tint")}
-                          className="h-6 w-6 p-0 hover:bg-muted"
-                          title="Reset to 0"
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                    <span className="text-sm text-muted-foreground">{adjustments.tint}</span>
                   </div>
                   <Slider
                     value={[adjustments.tint]}
@@ -536,7 +391,7 @@ export default function ManualControls({ initialLut, referenceImage, persistentS
 }
 
 function generateLutFromAdjustments(adjustments: ColorAdjustments): string {
-
+  // This is a simplified LUT generation - in reality, this would be much more complex
   return `# Generated LUT with manual adjustments
 TITLE "Modified LUT"
 DOMAIN_MIN 0.0 0.0 0.0
