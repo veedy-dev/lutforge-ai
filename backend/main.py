@@ -283,7 +283,7 @@ def generate_parameters_with_gemini(analysis: str) -> ColorParams:
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "message": "LutForge AI Backend is running"}
+    return {"status": "healthy", "message": "LUTForge AI Backend is running"}
 
 @app.get("/test-gemini")
 async def test_gemini():

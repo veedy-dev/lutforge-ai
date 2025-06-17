@@ -4,10 +4,21 @@ import LutGenerator from "@/components/lut-generator";
 import ManualControls from "@/components/manual-controls";
 import RawProcessor from "@/components/raw-processor";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { FileText, Image, Settings, Upload } from "lucide-react";
+import {
+  Coffee,
+  ExternalLink,
+  FileText,
+  Github,
+  Heart,
+  Image,
+  Settings,
+  Upload,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -156,7 +167,7 @@ export default function Home()
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="generate" className="flex items-center gap-2">
               <Upload className="w-4 h-4" />
               Generate LUT
@@ -252,6 +263,56 @@ export default function Home()
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Support Project Card */}
+        <Card className="mt-8 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200 dark:from-purple-950/30 dark:to-pink-950/30 dark:border-purple-800/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full">
+                  <Heart className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    Support This Project
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Help us continue developing LUTForge AI! Your support enables us to improve
+                    features, add new capabilities, and keep this tool free for the community.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/30"
+                  onClick={() => window.open("https://github.com/sponsors/veedy-dev", "_blank")}
+                >
+                  <Heart className="w-4 h-4 mr-2 text-pink-500" />
+                  Sponsor
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-600 dark:text-orange-300 dark:hover:bg-orange-900/30"
+                  onClick={() => window.open("https://ko-fi.com/veedygraph", "_blank")}
+                >
+                  <Coffee className="w-4 h-4 mr-2 text-orange-500" />
+                  Ko-fi
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  onClick={() => window.open("https://github.com/veedy-dev/lutforge-ai", "_blank")}
+                >
+                  <Github className="w-4 h-4 mr-2" />
+                  Repository
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -54,7 +54,7 @@
   
   <!-- Main Title -->
   <text x="320" y="135" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="48" font-weight="700" fill="white" filter="url(#glow)">
-    LutForge AI
+    LUTForge AI
   </text>
   
   <!-- Subtitle -->

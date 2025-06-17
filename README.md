@@ -1,10 +1,10 @@
-# 🎨 LutForge AI
+# 🎨 LUTForge AI
 
 **AI-powered color grading with intelligent 3D LUT generation**
 
 Transform your images with professional-quality color grading powered by artificial intelligence. Upload an image, let AI analyze the color grade, and generate professional-quality LUTs for your workflow.
 
-![LutForge AI Banner](frontend/public/banner.svg)
+![LUTForge AI Banner](frontend/public/banner.svg)
 
 ## ✨ Features
 
@@ -96,7 +96,7 @@ frontend/
 
 ## 🎨 Professional Workflow
 
-LutForge AI is designed for professional colorists and content creators:
+LUTForge AI is designed for professional colorists and content creators:
 
 - **For Quick Preview**: Test and visualize color grades with JPEG/PNG workflow
 - **For Professional Results**: Export LUTs for use with RAW files in dedicated photo/video editing software
@@ -104,14 +104,14 @@ LutForge AI is designed for professional colorists and content creators:
 
 ## 🌟 Support the Project
 
-If you find LutForge AI helpful for your color grading workflow, consider supporting its development:
+If you find LUTForge AI helpful for your color grading workflow, consider supporting its development:
 
 ### ❤️ Sponsors & Donations
 
 [![GitHub Sponsors](https://img.shields.io/badge/GitHub-Sponsors-pink?style=for-the-badge&logo=github)](https://github.com/sponsors/veedy-dev)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-orange?style=for-the-badge&logo=ko-fi)](https://ko-fi.com/veedygraph)
 
-Your support helps maintain and improve LutForge AI, add new features, and keep it free for the creative community!
+Your support helps maintain and improve LUTForge AI, add new features, and keep it free for the creative community!
 
 ## 🤝 Contributing
 
