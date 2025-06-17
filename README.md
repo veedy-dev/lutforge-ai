@@ -4,7 +4,7 @@
 
 Transform your images with professional-quality color grading powered by artificial intelligence. Upload an image, let AI analyze the color grade, and generate professional-quality LUTs for your workflow.
 
-![LutForge AI Banner](public/placeholder-logo.png)
+![LutForge AI Banner](public/logo.png)
 
 ## ✨ Features
 
@@ -31,7 +31,7 @@ Transform your images with professional-quality color grading powered by artific
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js v18.x+
 - npm, yarn, pnpm, or bun
 
 ### Installation
