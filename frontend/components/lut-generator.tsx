@@ -344,7 +344,7 @@ export default function LutGenerator(
                 Reference Image
               </h3>
               <div
-                className="relative w-full rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 border dark:border-gray-700"
+                className="relative w-full rounded-lg overflow-hidden bg-gray-100 dark:bg-black border border-gray-300 dark:border-zinc-700"
                 style={{ aspectRatio: "16/9" }}
               >
                 <Image
