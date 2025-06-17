@@ -62,10 +62,8 @@ export default function RawProcessor(
 
   useEffect(() =>
   {
-    // Only reapply if we already have a processed image and user changed intensity
     if (rawImage && processedImage && getCurrentLut().lut && !isProcessing)
     {
-      // Add a small delay to debounce intensity changes
       const timeoutId = setTimeout(() =>
       {
         applyLut();
@@ -75,17 +73,14 @@ export default function RawProcessor(
     }
   }, [lutIntensity]);
 
-  // Don't auto-apply LUT when props change, let user control when to apply
   useEffect(() =>
   {
-    // Only clear processed image if manual adjustments actually changed
     if (rawImage && manualLutData && processedImage && prevManualAdjustmentsRef.current)
     {
       const hasActualChange =
         JSON.stringify(manualAdjustments) !== JSON.stringify(prevManualAdjustmentsRef.current);
       if (hasActualChange)
       {
-        // Only clear the processed image, don't auto-reapply
         setProcessedImage(null);
         updateState({ processedImage: null });
       }
@@ -150,7 +145,7 @@ export default function RawProcessor(
       reader.onload = () =>
       {
         setCustomLutData(reader.result as string);
-        // Clear processed image so user can explicitly apply the new LUT
+
         setProcessedImage(null);
         updateState({ processedImage: null });
 
@@ -228,11 +223,9 @@ export default function RawProcessor(
 
       img.onload = () =>
       {
-        // Start processing when image loads
         setIsProcessing(true);
         setProcessingProgress(20);
 
-        // Create canvas and context
         canvas.width = img.width;
         canvas.height = img.height;
 
@@ -243,26 +236,19 @@ export default function RawProcessor(
           return;
         }
 
-        // Set processing progress
         setProcessingProgress(40);
 
-        // Draw image to canvas
         ctx.drawImage(img, 0, 0);
 
-        // Set processing progress
         setProcessingProgress(60);
 
-        // Apply LUT with proper intensity
-        const intensity = lutIntensity[0] / 100; // Convert percentage to 0-1 range
+        const intensity = lutIntensity[0] / 100;
         applyLutToCanvas(ctx, img, currentLut, intensity);
 
-        // Set processing progress
         setProcessingProgress(80);
 
-        // Convert to data URL
         const processedDataUrl = canvas.toDataURL("image/jpeg", 0.9);
 
-        // Set processed image and stop processing
         setProcessedImage(processedDataUrl);
         updateState({ processedImage: processedDataUrl });
         setIsProcessing(false);
@@ -313,19 +299,15 @@ export default function RawProcessor(
     intensity: number,
   ) =>
   {
-    // Clear canvas first
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     const parsedLut = parseCubeLut(lutData);
     if (!parsedLut)
     {
-      // Draw original image if LUT parsing fails
       ctx.drawImage(img, 0, 0);
       return;
     }
 
-
-    // Draw original image first
     ctx.drawImage(img, 0, 0);
 
     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -335,53 +317,41 @@ export default function RawProcessor(
     let colorChangeCount = 0;
     let totalPixels = data.length / 4;
 
-
     for (let i = 0; i < data.length; i += 4)
     {
       const originalR = data[i];
       const originalG = data[i + 1];
       const originalB = data[i + 2];
 
-      // Convert to [0,1] range for LUT lookup
       const r = originalR / 255;
       const g = originalG / 255;
       const b = originalB / 255;
 
-      // Apply LUT transformation
       const newColor = lookupColorInLut(r, g, b, parsedLut);
 
-      // Sample first few pixels for detailed debugging
       if (sampleCount < 3)
       {
-        // Sample tracking for debugging purposes
         sampleCount++;
       }
 
-      // Check if color actually changed
       const colorChanged = Math.abs(newColor.r - r) > 0.01 || Math.abs(newColor.g - g) > 0.01
         || Math.abs(newColor.b - b) > 0.01;
       if (colorChanged) colorChangeCount++;
 
-      // Apply intensity blending: blend original with LUT result
       const blendedR = (newColor.r * intensity) + (r * (1 - intensity));
       const blendedG = (newColor.g * intensity) + (g * (1 - intensity));
       const blendedB = (newColor.b * intensity) + (b * (1 - intensity));
 
-      // Convert back to [0,255] range and ensure valid bounds
       data[i] = Math.round(Math.max(0, Math.min(255, blendedR * 255)));
       data[i + 1] = Math.round(Math.max(0, Math.min(255, blendedG * 255)));
       data[i + 2] = Math.round(Math.max(0, Math.min(255, blendedB * 255)));
-      // Alpha channel (data[i + 3]) remains unchanged
     }
-
 
     ctx.putImageData(imageData, 0, 0);
   };
 
   const parseCubeLut = (lutString: string) =>
   {
-
-    // Check if the string is JSON-encoded (contains escaped newlines)
     let processedString = lutString;
     if (lutString.startsWith("\"") && lutString.endsWith("\""))
     {
@@ -394,19 +364,14 @@ export default function RawProcessor(
       }
     }
 
-    // Also handle escaped newlines in regular strings
     if (processedString.includes("\\n"))
     {
       processedString = processedString.replace(/\\n/g, "\n");
     }
 
-
-    // Handle different line ending formats and split properly
     const normalizedLutString = processedString.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
     const allLines = normalizedLutString.split("\n").map(line => line.trim());
 
-
-    // Filter header lines but keep all data lines
     const lines = allLines.filter(line =>
       line.length > 0
       && !line.startsWith("#")
@@ -416,10 +381,8 @@ export default function RawProcessor(
       && !line.startsWith("DOMAIN_MAX")
     );
 
-
     let size = 32;
 
-    // Find LUT size from header
     for (const line of allLines)
     {
       if (line.startsWith("LUT_3D_SIZE"))
@@ -444,7 +407,6 @@ export default function RawProcessor(
     let identityCount = 0;
     let transformedCount = 0;
 
-    // Process only the data lines
     for (let i = 0; i < lines.length; i++)
     {
       const line = lines[i];
@@ -452,8 +414,6 @@ export default function RawProcessor(
 
       if (values.length === 3 && !isNaN(values[0]) && !isNaN(values[1]) && !isNaN(values[2]))
       {
-        // IMPORTANT: .cube format uses blue-fastest ordering (B varies fastest, then G, then R)
-        // So dataIndex maps to: b = dataIndex % size, g = floor((dataIndex % (size*size)) / size), r = floor(dataIndex / (size*size))
         const b = dataIndex % size;
         const g = Math.floor((dataIndex % (size * size)) / size);
         const r = Math.floor(dataIndex / (size * size));
@@ -462,7 +422,6 @@ export default function RawProcessor(
         {
           lutData[r][g][b] = [values[0], values[1], values[2]];
 
-          // Check if this is an identity transformation
           const expectedR = r / (size - 1);
           const expectedG = g / (size - 1);
           const expectedB = b / (size - 1);
@@ -472,7 +431,6 @@ export default function RawProcessor(
           if (diff > 0.01)
           {
             transformedCount++;
-            // Log first few transformations for debugging
           }
           else
           {
@@ -488,7 +446,6 @@ export default function RawProcessor(
 
     const totalEntries = transformedCount + identityCount;
     const transformationPercentage = totalEntries > 0 ? (transformedCount / totalEntries) * 100 : 0;
-
 
     if (transformationPercentage < 10)
     {
@@ -512,17 +469,14 @@ export default function RawProcessor(
     const size = lut.size;
     const data = lut.data;
 
-    // Ensure input values are in valid range [0,1]
     r = Math.max(0, Math.min(1, r));
     g = Math.max(0, Math.min(1, g));
     b = Math.max(0, Math.min(1, b));
 
-    // Scale to LUT coordinates (0 to size-1)
     const rScaled = r * (size - 1);
     const gScaled = g * (size - 1);
     const bScaled = b * (size - 1);
 
-    // Get integer coordinates
     const r0 = Math.floor(rScaled);
     const g0 = Math.floor(gScaled);
     const b0 = Math.floor(bScaled);
@@ -531,15 +485,12 @@ export default function RawProcessor(
     const g1 = Math.min(g0 + 1, size - 1);
     const b1 = Math.min(b0 + 1, size - 1);
 
-    // Calculate fractional parts for interpolation
     const rFrac = rScaled - r0;
     const gFrac = gScaled - g0;
     const bFrac = bScaled - b0;
 
     try
     {
-      // Get the 8 corner values for trilinear interpolation
-      // IMPORTANT: LUT data should be indexed as [r][g][b] not [b][g][r]
       const c000 = data[r0]?.[g0]?.[b0] || [r, g, b];
       const c001 = data[r0]?.[g0]?.[b1] || [r, g, b];
       const c010 = data[r0]?.[g1]?.[b0] || [r, g, b];
@@ -549,7 +500,6 @@ export default function RawProcessor(
       const c110 = data[r1]?.[g1]?.[b0] || [r, g, b];
       const c111 = data[r1]?.[g1]?.[b1] || [r, g, b];
 
-      // Perform trilinear interpolation
       const c00 = [
         c000[0] * (1 - rFrac) + c100[0] * rFrac,
         c000[1] * (1 - rFrac) + c100[1] * rFrac,
@@ -592,14 +542,12 @@ export default function RawProcessor(
         c0[2] * (1 - bFrac) + c1[2] * bFrac,
       ];
 
-      // Ensure result is in valid range and not inverted
       const finalResult = {
         r: Math.max(0, Math.min(1, result[0])),
         g: Math.max(0, Math.min(1, result[1])),
         b: Math.max(0, Math.min(1, result[2])),
       };
 
-      // Safety check: if the transformation is too extreme, fall back to original
       const maxChange = Math.max(
         Math.abs(finalResult.r - r),
         Math.abs(finalResult.g - g),
@@ -608,7 +556,6 @@ export default function RawProcessor(
 
       if (maxChange > 0.8)
       {
-        // Transformation too extreme, use original color
         return { r, g, b };
       }
 
@@ -616,7 +563,6 @@ export default function RawProcessor(
     }
     catch (e)
     {
-      // If anything goes wrong, return original color
       return { r, g, b };
     }
   };
@@ -652,18 +598,18 @@ export default function RawProcessor(
         <Card className="bg-green-50 border-green-200 dark:bg-green-900 dark:border-green-700">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <Box className="w-5 h-5 text-green-600 dark:text-green-300 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-medium text-green-900 dark:text-green-100 mb-1">Current LUT</h4>
-                <div className="flex items-center gap-2">
+              <Box className="w-5 h-5 text-green-600 dark:text-green-300 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-green-900 dark:text-green-100 mb-2">Current LUT</h4>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <Badge
                     variant="outline"
-                    className="text-green-700 border-green-300 dark:text-green-200 dark:border-green-600 dark:bg-green-800"
+                    className="text-green-700 border-green-300 dark:text-green-200 dark:border-green-600 dark:bg-green-800 w-fit"
                   >
                     {getCurrentLut().source}
                   </Badge>
                   {getCurrentLut().filename && (
-                    <span className="text-sm text-green-700 dark:text-green-200 font-medium">
+                    <span className="text-sm text-green-700 dark:text-green-200 font-medium break-all">
                       {getCurrentLut().source === "Custom Imported LUT"
                         ? `${getCurrentLut().filename}.lut`
                         : `${getCurrentLut().filename}.cube`}
@@ -760,16 +706,16 @@ export default function RawProcessor(
       {rawImage && getCurrentLut().lut && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <span>LUT Processing</span>
-              <div className="flex gap-2">
-                <Badge variant="outline">{getCurrentLut().source}</Badge>
-                <Badge variant="outline">LUT Ready</Badge>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="w-fit">{getCurrentLut().source}</Badge>
+                <Badge variant="outline" className="w-fit">LUT Ready</Badge>
               </div>
             </CardTitle>
             {getCurrentLut().filename && (
               <div className="text-sm">
-                <span className="text-green-600 font-medium">
+                <span className="text-green-600 font-medium break-all">
                   File name: {getCurrentLut().filename}.cube
                 </span>
               </div>
