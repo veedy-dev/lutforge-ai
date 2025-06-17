@@ -573,21 +573,29 @@ export default function RawProcessor(
       <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/60 dark:border-blue-700/80 dark:backdrop-blur-sm">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <FileText className="w-5 h-5 text-blue-600 dark:text-blue-300 mt-0.5" />
+            <FileText className="w-6 h-6 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-300 mt-0.5" />
             <div>
               <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
                 Professional Workflow Note
               </h4>
-              <p className="text-sm text-blue-700 dark:text-blue-200 mb-2">
-                <strong>For Quick Preview:</strong>{" "}
-                This JPEG/PNG workflow is convenient for testing and visualization.
-              </p>
-              <p className="text-sm text-blue-700 dark:text-blue-200">
-                <strong>For Professional Results:</strong>{" "}
-                LUT preview is limited to JPEG/PNG formats. For best results, apply LUTs to RAW
-                files using dedicated photo or video editing software to fully utilize your image
-                data and achieve high-quality color grading.
-              </p>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-lg text-blue-600 dark:text-blue-300 mt-[-2px] flex-shrink-0">•</span>
+                  <p className="text-sm text-blue-700 dark:text-blue-200">
+                    <strong>For Quick Preview:</strong>{" "}
+                    This JPEG/PNG workflow is convenient for testing and visualization.
+                  </p>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-lg text-blue-600 dark:text-blue-300 mt-[-2px] flex-shrink-0">•</span>
+                  <p className="text-sm text-blue-700 dark:text-blue-200">
+                    <strong>For Professional Results:</strong>{" "}
+                    LUT preview is limited to JPEG/PNG formats. For best results, apply LUTs to RAW
+                    files using dedicated photo or video editing software to fully utilize your image
+                    data and achieve high-quality color grading.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -598,7 +606,7 @@ export default function RawProcessor(
         <Card className="bg-green-50 border-green-200 dark:bg-green-900 dark:border-green-700">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <Box className="w-5 h-5 text-green-600 dark:text-green-300 mt-0.5 flex-shrink-0" />
+              <Box className="w-6 h-6 sm:w-5 sm:h-5 text-green-600 dark:text-green-300 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-green-900 dark:text-green-100 mb-2">Current LUT</h4>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -630,16 +638,19 @@ export default function RawProcessor(
         <Card className="bg-amber-50 border-amber-200 dark:bg-amber-900 dark:border-amber-700">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <Box className="w-5 h-5 text-amber-600 dark:text-amber-300 mt-0.5" />
+              <Box className="w-6 h-6 sm:w-5 sm:h-5 text-amber-600 dark:text-amber-300 mt-0.5" />
               <div>
                 <h4 className="font-medium text-amber-900 dark:text-amber-100 mb-1">
                   Getting Started
                 </h4>
-                <p className="text-sm text-amber-700 dark:text-amber-200">
-                  Upload your image and import a LUT file to get started. You can generate LUTs
-                  using the "Generate LUT" or "Manual Controls" tabs, or import your own
-                  .cube/.3dl/.lut files below.
-                </p>
+                <div className="flex items-start gap-2">
+                  <span className="text-lg text-amber-600 dark:text-amber-300 mt-[-2px] flex-shrink-0">•</span>
+                  <p className="text-sm text-amber-700 dark:text-amber-200">
+                    Upload your image and import a LUT file to get started. You can generate LUTs
+                    using the "Generate LUT" or "Manual Controls" tabs, or import your own
+                    .cube/.3dl/.lut files below.
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>
