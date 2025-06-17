@@ -7,7 +7,7 @@ AI-powered 3D LUT generation from reference images. Upload any image and generat
 ![LUTForge AI Banner](frontend/public/banner.svg)
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://lutforge-ai.vercel.app)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 [![GitHub issues](https://img.shields.io/github/issues/veedy-dev/lutforge-ai)](https://github.com/veedy-dev/lutforge-ai/issues)
 
 </div>
@@ -164,7 +164,9 @@ If this project helps your workflow, consider supporting its development:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License - see the [LICENSE](LICENSE) file for details.
+
+**Summary**: You are free to use, share, and modify this software for non-commercial purposes only. Commercial use requires explicit permission.
 
 ---
 
