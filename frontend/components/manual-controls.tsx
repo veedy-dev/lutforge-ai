@@ -69,10 +69,19 @@ export default function ManualControls(
       onStateChange(adjustments);
     }
 
-    if (onLutGenerated && (Object.values(adjustments).some(val => val !== 0) || initialLut))
+    if (onLutGenerated)
     {
-      const lutData = generateLutFromAdjustments(adjustments);
-      onLutGenerated(lutData);
+      const hasAdjustments = Object.values(adjustments).some(val => val !== 0);
+
+      if (hasAdjustments)
+      {
+        const lutData = generateLutFromAdjustments(adjustments, initialLut);
+        onLutGenerated(lutData);
+      }
+      else if (initialLut)
+      {
+        onLutGenerated(initialLut);
+      }
     }
   }, [adjustments, onStateChange, onLutGenerated, initialLut]);
 
@@ -121,7 +130,12 @@ export default function ManualControls(
 
   const generateModifiedLut = () =>
   {
-    const lutData = generateLutFromAdjustments(adjustments);
+    const hasAdjustments = Object.values(adjustments).some(val => val !== 0);
+
+    const lutData = hasAdjustments
+      ? generateLutFromAdjustments(adjustments, initialLut)
+      : initialLut || generateLutFromAdjustments(adjustments, null);
+
     const fileName = lutFileName.trim() || generateRandomFileName();
 
     if (onLutGenerated)
@@ -823,7 +837,11 @@ export default function ManualControls(
                   <Button
                     onClick={() =>
                     {
-                      const lutData = generateLutFromAdjustments(adjustments);
+                      const hasAdjustments = Object.values(adjustments).some(val => val !== 0);
+                      const lutData = hasAdjustments
+                        ? generateLutFromAdjustments(adjustments, initialLut)
+                        : initialLut || generateLutFromAdjustments(adjustments, null);
+
                       if (onLutGenerated)
                       {
                         onLutGenerated(lutData);
@@ -834,14 +852,14 @@ export default function ManualControls(
                       }
                     }}
                     className="flex-1"
-                    disabled={Object.values(adjustments).every(val => val === 0) && !initialLut}
+                    disabled={!initialLut}
                   >
                     Export to Apply
                   </Button>
                   <Button
                     onClick={generateModifiedLut}
                     variant="outline"
-                    disabled={Object.values(adjustments).every(val => val === 0) && !initialLut}
+                    disabled={!initialLut}
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Download LUT
@@ -856,7 +874,10 @@ export default function ManualControls(
   );
 }
 
-function generateLutFromAdjustments(adjustments: ColorAdjustments): string
+function generateLutFromAdjustments(
+  adjustments: ColorAdjustments,
+  initialLut?: string | null,
+): string
 {
   const size = 33;
   let lutData = `# Generated LUT with manual adjustments
