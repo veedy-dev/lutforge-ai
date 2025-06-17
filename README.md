@@ -166,8 +166,6 @@ If this project helps your workflow, consider supporting its development:
 
 This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License - see the [LICENSE](LICENSE) file for details.
 
-**Summary**: You are free to use, share, and modify this software for non-commercial purposes only. Commercial use requires explicit permission.
-
 ---
 
 <div align="center">
