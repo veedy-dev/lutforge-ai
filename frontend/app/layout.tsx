@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@/components/theme-provider";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -15,12 +15,18 @@ export const metadata: Metadata = {
   title: "LUTForge AI - Professional Color Grading",
   description: "AI-powered 3D LUT generation and professional color grading tools",
   generator: "LUTForge AI",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.ico",
     apple: "/favicon.svg",
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({

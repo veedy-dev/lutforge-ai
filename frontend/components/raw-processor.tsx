@@ -62,12 +62,30 @@ export default function RawProcessor(
 
   useEffect(() =>
   {
+    // Only reapply if we already have a processed image and user changed intensity
+    if (rawImage && processedImage && getCurrentLut().lut && !isProcessing)
+    {
+      // Add a small delay to debounce intensity changes
+      const timeoutId = setTimeout(() =>
+      {
+        applyLut();
+      }, 300);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [lutIntensity]);
+
+  // Don't auto-apply LUT when props change, let user control when to apply
+  useEffect(() =>
+  {
+    // Only clear processed image if manual adjustments actually changed
     if (rawImage && manualLutData && processedImage && prevManualAdjustmentsRef.current)
     {
       const hasActualChange =
         JSON.stringify(manualAdjustments) !== JSON.stringify(prevManualAdjustmentsRef.current);
       if (hasActualChange)
       {
+        // Only clear the processed image, don't auto-reapply
         setProcessedImage(null);
         updateState({ processedImage: null });
       }
@@ -132,18 +150,15 @@ export default function RawProcessor(
       reader.onload = () =>
       {
         setCustomLutData(reader.result as string);
+        // Clear processed image so user can explicitly apply the new LUT
         setProcessedImage(null);
-
-        if (rawImage)
-        {
-          setTimeout(() => applyLut(), 100);
-        }
+        updateState({ processedImage: null });
 
         toast.success(`Custom LUT imported: ${filename}.lut`);
       };
       reader.readAsText(file);
     }
-  }, [rawImage]);
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -237,21 +252,9 @@ export default function RawProcessor(
         // Set processing progress
         setProcessingProgress(60);
 
-        // Get image data and apply basic processing
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-
-        // Apply basic color adjustments
-        for (let i = 0; i < data.length; i += 4)
-        {
-          // Basic exposure adjustment
-          data[i] = Math.min(255, data[i] * 1.2); // Red
-          data[i + 1] = Math.min(255, data[i + 1] * 1.2); // Green
-          data[i + 2] = Math.min(255, data[i + 2] * 1.2); // Blue
-        }
-
-        // Put processed data back
-        ctx.putImageData(imageData, 0, 0);
+        // Apply LUT with proper intensity
+        const intensity = lutIntensity[0] / 100; // Convert percentage to 0-1 range
+        applyLutToCanvas(ctx, img, currentLut, intensity);
 
         // Set processing progress
         setProcessingProgress(80);
@@ -310,45 +313,114 @@ export default function RawProcessor(
     intensity: number,
   ) =>
   {
+    // Clear canvas first
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
     const parsedLut = parseCubeLut(lutData);
     if (!parsedLut)
     {
-      ctx.filter = `opacity(${intensity}) contrast(1.1) saturate(1.2) brightness(1.05)`;
+      // Draw original image if LUT parsing fails
       ctx.drawImage(img, 0, 0);
       return;
     }
 
+
+    // Draw original image first
     ctx.drawImage(img, 0, 0);
 
     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
     const data = imageData.data;
 
+    let sampleCount = 0;
+    let colorChangeCount = 0;
+    let totalPixels = data.length / 4;
+
+
     for (let i = 0; i < data.length; i += 4)
     {
-      const r = data[i] / 255;
-      const g = data[i + 1] / 255;
-      const b = data[i + 2] / 255;
+      const originalR = data[i];
+      const originalG = data[i + 1];
+      const originalB = data[i + 2];
 
+      // Convert to [0,1] range for LUT lookup
+      const r = originalR / 255;
+      const g = originalG / 255;
+      const b = originalB / 255;
+
+      // Apply LUT transformation
       const newColor = lookupColorInLut(r, g, b, parsedLut);
 
-      data[i] = Math.round((newColor.r * 255 * intensity) + (data[i] * (1 - intensity)));
-      data[i + 1] = Math.round((newColor.g * 255 * intensity) + (data[i + 1] * (1 - intensity)));
-      data[i + 2] = Math.round((newColor.b * 255 * intensity) + (data[i + 2] * (1 - intensity)));
+      // Sample first few pixels for detailed debugging
+      if (sampleCount < 3)
+      {
+        // Sample tracking for debugging purposes
+        sampleCount++;
+      }
+
+      // Check if color actually changed
+      const colorChanged = Math.abs(newColor.r - r) > 0.01 || Math.abs(newColor.g - g) > 0.01
+        || Math.abs(newColor.b - b) > 0.01;
+      if (colorChanged) colorChangeCount++;
+
+      // Apply intensity blending: blend original with LUT result
+      const blendedR = (newColor.r * intensity) + (r * (1 - intensity));
+      const blendedG = (newColor.g * intensity) + (g * (1 - intensity));
+      const blendedB = (newColor.b * intensity) + (b * (1 - intensity));
+
+      // Convert back to [0,255] range and ensure valid bounds
+      data[i] = Math.round(Math.max(0, Math.min(255, blendedR * 255)));
+      data[i + 1] = Math.round(Math.max(0, Math.min(255, blendedG * 255)));
+      data[i + 2] = Math.round(Math.max(0, Math.min(255, blendedB * 255)));
+      // Alpha channel (data[i + 3]) remains unchanged
     }
+
 
     ctx.putImageData(imageData, 0, 0);
   };
 
   const parseCubeLut = (lutString: string) =>
   {
-    const lines = lutString.split("\n").map(line => line.trim()).filter(line =>
-      line && !line.startsWith("#")
+
+    // Check if the string is JSON-encoded (contains escaped newlines)
+    let processedString = lutString;
+    if (lutString.startsWith("\"") && lutString.endsWith("\""))
+    {
+      try
+      {
+        processedString = JSON.parse(lutString);
+      }
+      catch (e)
+      {
+      }
+    }
+
+    // Also handle escaped newlines in regular strings
+    if (processedString.includes("\\n"))
+    {
+      processedString = processedString.replace(/\\n/g, "\n");
+    }
+
+
+    // Handle different line ending formats and split properly
+    const normalizedLutString = processedString.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const allLines = normalizedLutString.split("\n").map(line => line.trim());
+
+
+    // Filter header lines but keep all data lines
+    const lines = allLines.filter(line =>
+      line.length > 0
+      && !line.startsWith("#")
+      && !line.startsWith("LUT_3D_SIZE")
+      && !line.startsWith("TITLE")
+      && !line.startsWith("DOMAIN_MIN")
+      && !line.startsWith("DOMAIN_MAX")
     );
 
-    let size = 32;
-    const lutData: [number, number, number][][][] = [];
 
-    for (const line of lines)
+    let size = 32;
+
+    // Find LUT size from header
+    for (const line of allLines)
     {
       if (line.startsWith("LUT_3D_SIZE"))
       {
@@ -356,6 +428,8 @@ export default function RawProcessor(
         break;
       }
     }
+
+    const lutData: [number, number, number][][][] = [];
 
     for (let r = 0; r < size; r++)
     {
@@ -367,29 +441,62 @@ export default function RawProcessor(
     }
 
     let dataIndex = 0;
-    for (const line of lines)
+    let identityCount = 0;
+    let transformedCount = 0;
+
+    // Process only the data lines
+    for (let i = 0; i < lines.length; i++)
     {
-      if (
-        line.startsWith("LUT_3D_SIZE") || line.startsWith("TITLE")
-        || line.startsWith("DOMAIN_MIN") || line.startsWith("DOMAIN_MAX")
-      )
-      {
-        continue;
-      }
-
+      const line = lines[i];
       const values = line.split(/\s+/).map(v => parseFloat(v));
-      if (values.length === 3)
-      {
-        const b = Math.floor(dataIndex / (size * size));
-        const g = Math.floor((dataIndex % (size * size)) / size);
-        const r = dataIndex % size;
 
-        if (b < size && g < size && r < size)
+      if (values.length === 3 && !isNaN(values[0]) && !isNaN(values[1]) && !isNaN(values[2]))
+      {
+        // IMPORTANT: .cube format uses blue-fastest ordering (B varies fastest, then G, then R)
+        // So dataIndex maps to: b = dataIndex % size, g = floor((dataIndex % (size*size)) / size), r = floor(dataIndex / (size*size))
+        const b = dataIndex % size;
+        const g = Math.floor((dataIndex % (size * size)) / size);
+        const r = Math.floor(dataIndex / (size * size));
+
+        if (r < size && g < size && b < size)
         {
           lutData[r][g][b] = [values[0], values[1], values[2]];
+
+          // Check if this is an identity transformation
+          const expectedR = r / (size - 1);
+          const expectedG = g / (size - 1);
+          const expectedB = b / (size - 1);
+
+          const diff = Math.abs(values[0] - expectedR) + Math.abs(values[1] - expectedG)
+            + Math.abs(values[2] - expectedB);
+          if (diff > 0.01)
+          {
+            transformedCount++;
+            // Log first few transformations for debugging
+          }
+          else
+          {
+            identityCount++;
+          }
         }
         dataIndex++;
       }
+      else if (line.length > 0)
+      {
+      }
+    }
+
+    const totalEntries = transformedCount + identityCount;
+    const transformationPercentage = totalEntries > 0 ? (transformedCount / totalEntries) * 100 : 0;
+
+
+    if (transformationPercentage < 10)
+    {
+    }
+
+    if (transformedCount + identityCount === 0)
+    {
+      return null;
     }
 
     return { size, data: lutData };
@@ -405,10 +512,17 @@ export default function RawProcessor(
     const size = lut.size;
     const data = lut.data;
 
+    // Ensure input values are in valid range [0,1]
+    r = Math.max(0, Math.min(1, r));
+    g = Math.max(0, Math.min(1, g));
+    b = Math.max(0, Math.min(1, b));
+
+    // Scale to LUT coordinates (0 to size-1)
     const rScaled = r * (size - 1);
     const gScaled = g * (size - 1);
     const bScaled = b * (size - 1);
 
+    // Get integer coordinates
     const r0 = Math.floor(rScaled);
     const g0 = Math.floor(gScaled);
     const b0 = Math.floor(bScaled);
@@ -417,21 +531,25 @@ export default function RawProcessor(
     const g1 = Math.min(g0 + 1, size - 1);
     const b1 = Math.min(b0 + 1, size - 1);
 
+    // Calculate fractional parts for interpolation
     const rFrac = rScaled - r0;
     const gFrac = gScaled - g0;
     const bFrac = bScaled - b0;
 
     try
     {
-      const c000 = data[r0][g0][b0] || [r, g, b];
-      const c001 = data[r0][g0][b1] || [r, g, b];
-      const c010 = data[r0][g1][b0] || [r, g, b];
-      const c011 = data[r0][g1][b1] || [r, g, b];
-      const c100 = data[r1][g0][b0] || [r, g, b];
-      const c101 = data[r1][g0][b1] || [r, g, b];
-      const c110 = data[r1][g1][b0] || [r, g, b];
-      const c111 = data[r1][g1][b1] || [r, g, b];
+      // Get the 8 corner values for trilinear interpolation
+      // IMPORTANT: LUT data should be indexed as [r][g][b] not [b][g][r]
+      const c000 = data[r0]?.[g0]?.[b0] || [r, g, b];
+      const c001 = data[r0]?.[g0]?.[b1] || [r, g, b];
+      const c010 = data[r0]?.[g1]?.[b0] || [r, g, b];
+      const c011 = data[r0]?.[g1]?.[b1] || [r, g, b];
+      const c100 = data[r1]?.[g0]?.[b0] || [r, g, b];
+      const c101 = data[r1]?.[g0]?.[b1] || [r, g, b];
+      const c110 = data[r1]?.[g1]?.[b0] || [r, g, b];
+      const c111 = data[r1]?.[g1]?.[b1] || [r, g, b];
 
+      // Perform trilinear interpolation
       const c00 = [
         c000[0] * (1 - rFrac) + c100[0] * rFrac,
         c000[1] * (1 - rFrac) + c100[1] * rFrac,
@@ -474,14 +592,31 @@ export default function RawProcessor(
         c0[2] * (1 - bFrac) + c1[2] * bFrac,
       ];
 
-      return {
+      // Ensure result is in valid range and not inverted
+      const finalResult = {
         r: Math.max(0, Math.min(1, result[0])),
         g: Math.max(0, Math.min(1, result[1])),
         b: Math.max(0, Math.min(1, result[2])),
       };
+
+      // Safety check: if the transformation is too extreme, fall back to original
+      const maxChange = Math.max(
+        Math.abs(finalResult.r - r),
+        Math.abs(finalResult.g - g),
+        Math.abs(finalResult.b - b),
+      );
+
+      if (maxChange > 0.8)
+      {
+        // Transformation too extreme, use original color
+        return { r, g, b };
+      }
+
+      return finalResult;
     }
     catch (e)
     {
+      // If anything goes wrong, return original color
       return { r, g, b };
     }
   };

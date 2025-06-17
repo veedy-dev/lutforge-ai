@@ -102,6 +102,8 @@ keys/
 memory-bank/
 backup/
 projectBrief.md
+CLAUDE.md
+/.claude
 
 # OS generated files
 .fuse_hidden*
