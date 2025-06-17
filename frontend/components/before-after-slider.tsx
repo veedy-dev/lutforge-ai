@@ -100,9 +100,6 @@ export default function BeforeAfterSlider({
           className="w-full h-full object-contain"
           draggable={false}
         />
-        <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium">
-          Original
-        </div>
       </div>
 
       {/* After Image (Right side) */}
@@ -118,9 +115,14 @@ export default function BeforeAfterSlider({
           className="w-full h-full object-contain"
           draggable={false}
         />
-        <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium">
-          With LUT
-        </div>
+      </div>
+
+      {/* Labels - positioned above the clipping to prevent cutoff */}
+      <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium z-30 pointer-events-none">
+        Original
+      </div>
+      <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-full text-sm font-medium z-30 pointer-events-none">
+        With LUT
       </div>
 
       {/* Slider Line */}
