@@ -170,7 +170,7 @@ This project is licensed under the Creative Commons Attribution-NonCommercial 4.
 
 <div align="center">
 
-[🌐 Try It Now](https://lutforge-ai.vercel.app) • [📧 Contact](mailto:vidifadilakbar20@gmail.com) • [🐦 Twitter](https://x.com/veedygraph)
+[🌐 Try It Now](https://lutforge-ai.vercel.app) • [📧 Contact](mailto:veedy.dev@gmail.com) • [🐦 Twitter](https://x.com/veedygraph)
 
 Made with ❤️ by [veedy-dev](https://github.com/veedy-dev)
 

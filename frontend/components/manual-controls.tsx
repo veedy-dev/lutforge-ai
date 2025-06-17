@@ -858,7 +858,7 @@ export default function ManualControls(
 
 function generateLutFromAdjustments(adjustments: ColorAdjustments): string
 {
-  const size = 32;
+  const size = 33;
   let lutData = `# Generated LUT with manual adjustments
 TITLE "Modified LUT"
 DOMAIN_MIN 0.0 0.0 0.0
@@ -867,11 +867,11 @@ LUT_3D_SIZE ${size}
 
 `;
 
-  for (let b = 0; b < size; b++)
+  for (let r = 0; r < size; r++)
   {
     for (let g = 0; g < size; g++)
     {
-      for (let r = 0; r < size; r++)
+      for (let b = 0; b < size; b++)
       {
         let red = r / (size - 1);
         let green = g / (size - 1);
@@ -893,20 +893,42 @@ LUT_3D_SIZE ${size}
           blue = ((blue - 0.5) * contrastFactor) + 0.5;
         }
 
+        const luminance = red * 0.299 + green * 0.587 + blue * 0.114;
+
+        if (adjustments.highlights !== 0 && luminance > 0.7)
+        {
+          const highlightFactor = adjustments.highlights / 400;
+          const strength = (luminance - 0.7) / 0.3;
+          const adjustment = highlightFactor * strength;
+          red += adjustment;
+          green += adjustment;
+          blue += adjustment;
+        }
+
+        if (adjustments.shadows !== 0 && luminance < 0.3)
+        {
+          const shadowFactor = adjustments.shadows / 300;
+          const strength = (0.3 - luminance) / 0.3;
+          const adjustment = shadowFactor * strength;
+          red += adjustment;
+          green += adjustment;
+          blue += adjustment;
+        }
+
         if (adjustments.whites !== 0)
         {
-          const whitesFactor = 1 + adjustments.whites / 300;
-          red = red + (1 - red) * (adjustments.whites / 100) * 0.3;
-          green = green + (1 - green) * (adjustments.whites / 100) * 0.3;
-          blue = blue + (1 - blue) * (adjustments.whites / 100) * 0.3;
+          const whitesAdjustment = adjustments.whites / 400;
+          red = red + (1 - red) * whitesAdjustment;
+          green = green + (1 - green) * whitesAdjustment;
+          blue = blue + (1 - blue) * whitesAdjustment;
         }
 
         if (adjustments.blacks !== 0)
         {
-          const blacksFactor = adjustments.blacks / 300;
-          red = red + red * blacksFactor;
-          green = green + green * blacksFactor;
-          blue = blue + blue * blacksFactor;
+          const blacksAdjustment = adjustments.blacks / 400;
+          red = red + red * blacksAdjustment;
+          green = green + green * blacksAdjustment;
+          blue = blue + blue * blacksAdjustment;
         }
 
         if (adjustments.saturation !== 0)
@@ -932,51 +954,25 @@ LUT_3D_SIZE ${size}
         if (adjustments.temperature !== 0)
         {
           const tempAdj = getTemperatureAdjustmentForLut(adjustments.temperature);
-          red += tempAdj.r / 255;
-          green += tempAdj.g / 255;
-          blue += tempAdj.b / 255;
+          red += tempAdj.r / 255 * 0.5;
+          green += tempAdj.g / 255 * 0.5;
+          blue += tempAdj.b / 255 * 0.5;
         }
 
         if (adjustments.tint !== 0)
         {
-          const tintIntensity = adjustments.tint / 100;
+          const tintIntensity = adjustments.tint / 200;
           if (adjustments.tint < 0)
           {
-            red += adjustments.tint * 0.005;
-            green += adjustments.tint * -0.008;
-            blue += adjustments.tint * 0.003;
+            red += tintIntensity * 0.3;
+            green += tintIntensity * -0.5;
+            blue += tintIntensity * 0.2;
           }
           else
           {
-            red += adjustments.tint * 0.008;
-            green += adjustments.tint * -0.005;
-            blue += adjustments.tint * 0.008;
-          }
-        }
-
-        if (adjustments.highlights !== 0)
-        {
-          const luminance = red * 0.299 + green * 0.587 + blue * 0.114;
-          if (luminance > 0.7)
-          {
-            const highlightFactor = adjustments.highlights / 400;
-            const strength = (luminance - 0.7) / 0.3;
-            red += highlightFactor * strength;
-            green += highlightFactor * strength;
-            blue += highlightFactor * strength;
-          }
-        }
-
-        if (adjustments.shadows !== 0)
-        {
-          const luminance = red * 0.299 + green * 0.587 + blue * 0.114;
-          if (luminance < 0.3)
-          {
-            const shadowFactor = adjustments.shadows / 300;
-            const strength = (0.3 - luminance) / 0.3;
-            red += shadowFactor * strength;
-            green += shadowFactor * strength;
-            blue += shadowFactor * strength;
+            red += tintIntensity * 0.5;
+            green += tintIntensity * -0.3;
+            blue += tintIntensity * 0.5;
           }
         }
 
