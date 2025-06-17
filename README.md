@@ -4,7 +4,7 @@
 
 Transform your images with professional-quality color grading powered by artificial intelligence. Upload an image, let AI analyze the color grade, and generate professional-quality LUTs for your workflow.
 
-![LutForge AI Banner](public/logo.png)
+![LutForge AI Banner](frontend/public/banner.svg)
 
 ## ✨ Features
 

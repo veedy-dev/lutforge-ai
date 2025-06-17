@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="300" viewBox="0 0 1200 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Main gradient background -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Logo circle gradient -->
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Text glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="300" fill="url(#bgGradient)" rx="20"/>
+  
+  <!-- Decorative particles -->
+  <circle cx="100" cy="50" r="2" fill="white" opacity="0.3"/>
+  <circle cx="1100" cy="250" r="1.5" fill="white" opacity="0.4"/>
+  <circle cx="200" cy="280" r="1" fill="white" opacity="0.5"/>
+  <circle cx="1000" cy="30" r="2.5" fill="white" opacity="0.2"/>
+  <circle cx="50" cy="200" r="1.5" fill="white" opacity="0.3"/>
+  
+  <!-- Logo Container Circle -->
+  <circle cx="200" cy="150" r="60" fill="url(#logoGradient)" opacity="0.9"/>
+  
+  <!-- 3D Cube Logo (scaled up from original) -->
+  <!-- Front face -->
+  <path d="M160 130 L200 110 L240 130 L200 150 Z" fill="white" opacity="0.9" />
+  
+  <!-- Right face -->
+  <path d="M200 150 L240 130 L240 170 L200 190 Z" fill="white" opacity="0.7" />
+  
+  <!-- Left face -->
+  <path d="M160 130 L200 150 L200 190 L160 170 Z" fill="white" opacity="0.5" />
+  
+  <!-- Color data points -->
+  <circle cx="180" cy="140" r="3" fill="white" opacity="0.8" />
+  <circle cx="220" cy="140" r="3" fill="white" opacity="0.8" />
+  <circle cx="200" cy="180" r="3" fill="white" opacity="0.8" />
+  
+  <!-- Main Title -->
+  <text x="320" y="135" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="48" font-weight="700" fill="white" filter="url(#glow)">
+    LutForge AI
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="320" y="170" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="18" font-weight="400" fill="white" opacity="0.9">
+    AI-powered color grading with intelligent 3D LUT generation
+  </text>
+  
+  <!-- Feature badges -->
+  <g transform="translate(320, 190)">
+    <!-- Multimodal AI badge -->
+    <rect x="0" y="0" width="120" height="28" rx="14" fill="white" opacity="0.2"/>
+    <text x="60" y="19" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="white" text-anchor="middle">Multimodal AI</text>
+    
+    <!-- 3D LUT Generation badge -->
+    <rect x="135" y="0" width="140" height="28" rx="14" fill="white" opacity="0.2"/>
+    <text x="205" y="19" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="white" text-anchor="middle">3D LUT Generation</text>
+    
+    <!-- Live Preview badge -->
+    <rect x="290" y="0" width="100" height="28" rx="14" fill="white" opacity="0.2"/>
+    <text x="340" y="19" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="white" text-anchor="middle">Live Preview</text>
+  </g>
+  
+  <!-- Decorative line -->
+  <line x1="320" y1="110" x2="800" y2="110" stroke="white" stroke-width="2" opacity="0.3"/>
+</svg> 
