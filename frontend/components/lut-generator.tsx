@@ -96,20 +96,41 @@ export default function LutGenerator(
 
   useEffect(() =>
   {
-    if (persistentState && !isAnalyzing && !generatedLut)
+    if (persistentState)
     {
-      if (persistentState.isAnalyzing !== isAnalyzing) setIsAnalyzing(persistentState.isAnalyzing);
-      if (persistentState.progress !== progress) setProgress(persistentState.progress);
+      const updates: (() => void)[] = [];
+
+      if (persistentState.isAnalyzing !== isAnalyzing)
+      {
+        updates.push(() => setIsAnalyzing(persistentState.isAnalyzing));
+      }
+
+      if (persistentState.progress !== progress)
+      {
+        updates.push(() => setProgress(persistentState.progress));
+      }
+
       if (persistentState.generatedLut !== generatedLut)
       {
-        setGeneratedLut(persistentState.generatedLut);
+        updates.push(() => setGeneratedLut(persistentState.generatedLut));
       }
-      if (persistentState.error !== error) setError(persistentState.error);
-      if (persistentState.lutFileName !== lutFileName) setLutFileName(persistentState.lutFileName);
+
+      if (persistentState.error !== error)
+      {
+        updates.push(() => setError(persistentState.error));
+      }
+
+      if (persistentState.lutFileName !== lutFileName)
+      {
+        updates.push(() => setLutFileName(persistentState.lutFileName));
+      }
+
       if (persistentState.generatedFileName !== generatedFileName)
       {
-        setGeneratedFileName(persistentState.generatedFileName);
+        updates.push(() => setGeneratedFileName(persistentState.generatedFileName));
       }
+
+      updates.forEach(update => update());
     }
   }, [persistentState]);
 
@@ -165,22 +186,34 @@ export default function LutGenerator(
     const file = acceptedFiles[0];
     if (file)
     {
+      setGeneratedLut(null);
+      setGeneratedFileName("");
+      setProgress(0);
+      setIsAnalyzing(false);
+      setError(null);
+
+      if (onStateChange)
+      {
+        onStateChange({
+          lutFileName,
+          generatedFileName: "",
+          isAnalyzing: false,
+          progress: 0,
+          error: null,
+          generatedLut: null,
+        });
+      }
+
       const reader = new FileReader();
       reader.onload = () =>
       {
         const imageData = reader.result as string;
         setUploadedImage(imageData);
         onImageUploaded(imageData);
-        setError(null);
-
-        setGeneratedLut(null);
-        setGeneratedFileName("");
-        setProgress(0);
-        setIsAnalyzing(false);
       };
       reader.readAsDataURL(file);
     }
-  }, [onImageUploaded]);
+  }, [onImageUploaded, onStateChange, lutFileName]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -199,15 +232,11 @@ export default function LutGenerator(
     setError(null);
     setGeneratedLut(null);
 
-    if (!lutFileName.trim())
-    {
-      const randomName = generateRandomFileName();
-      setGeneratedFileName(randomName);
-    }
-    else
-    {
-      setGeneratedFileName(lutFileName.trim());
-    }
+    const finalFileName = !lutFileName.trim()
+      ? generateRandomFileName()
+      : lutFileName.trim();
+
+    setGeneratedFileName(finalFileName);
 
     let progressInterval: NodeJS.Timeout | null = null;
 
@@ -225,14 +254,41 @@ export default function LutGenerator(
 
       setGeneratedLut(lutData);
       setIsAnalyzing(false);
+
+      if (onStateChange)
+      {
+        onStateChange({
+          lutFileName,
+          generatedFileName: finalFileName,
+          isAnalyzing: false,
+          progress: 100,
+          error: null,
+          generatedLut: lutData,
+        });
+      }
+
       onLutGenerated(lutData);
     }
     catch (err)
     {
       if (progressInterval) clearInterval(progressInterval);
+      const errorMessage = err instanceof Error ? err.message : "Failed to generate LUT";
+
       setIsAnalyzing(false);
-      setError(err instanceof Error ? err.message : "Failed to generate LUT");
+      setError(errorMessage);
       setProgress(0);
+
+      if (onStateChange)
+      {
+        onStateChange({
+          lutFileName,
+          generatedFileName: finalFileName,
+          isAnalyzing: false,
+          progress: 0,
+          error: errorMessage,
+          generatedLut: null,
+        });
+      }
     }
   };
 
