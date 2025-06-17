@@ -44,14 +44,29 @@ LUT_SIZE = 33
 
 
 class ColorParams(BaseModel):
+    # Basic adjustments
     black_point: float = 0.0
     white_point: float = 1.0
     contrast: float = 1.0
     saturation: float = 1.0
-    shadow_tint: Dict[str, Any] = {
-        "color": "neutral", "balance": [1.0, 1.0, 1.0]}
-    highlight_tint: Dict[str, Any] = {
-        "color": "neutral", "balance": [1.0, 1.0, 1.0]}
+    
+    # Professional color grading controls
+    lift: Dict[str, float] = {"r": 0.0, "g": 0.0, "b": 0.0}  # Shadows
+    gamma: Dict[str, float] = {"r": 1.0, "g": 1.0, "b": 1.0}  # Midtones  
+    gain: Dict[str, float] = {"r": 1.0, "g": 1.0, "b": 1.0}  # Highlights
+    
+    # Color temperature and tint
+    temperature: float = 6500.0  # Kelvin
+    tint: float = 0.0  # Magenta-Green bias
+    
+    # Channel curves
+    red_curve: Dict[str, float] = {"shadows": 1.0, "midtones": 1.0, "highlights": 1.0}
+    green_curve: Dict[str, float] = {"shadows": 1.0, "midtones": 1.0, "highlights": 1.0}
+    blue_curve: Dict[str, float] = {"shadows": 1.0, "midtones": 1.0, "highlights": 1.0}
+    
+    # Legacy parameters for compatibility
+    shadow_tint: Dict[str, Any] = {"color": "neutral", "balance": [1.0, 1.0, 1.0]}
+    highlight_tint: Dict[str, Any] = {"color": "neutral", "balance": [1.0, 1.0, 1.0]}
     channel_adjustments: Dict[str, float] = {}
 
 
@@ -128,6 +143,134 @@ def apply_channel_adjustments(lut: np.ndarray, adjustments: Dict[str, float]) ->
     return np.clip(lut, 0, 1)
 
 
+def kelvin_to_rgb(kelvin: float) -> tuple[float, float, float]:
+    """Convert color temperature in Kelvin to RGB multipliers"""
+    temp = max(1000, min(40000, kelvin)) / 100
+    
+    # Calculate red component
+    if temp <= 66:
+        red = 1.0
+    else:
+        red = temp - 60
+        red = 329.698727446 * (red ** -0.1332047592) / 255.0
+        red = max(0.0, min(1.0, red))
+    
+    # Calculate green component  
+    if temp <= 66:
+        green = temp
+        green = (99.4708025861 * np.log(green) - 161.1195681661) / 255.0
+        green = max(0.0, min(1.0, green))
+    else:
+        green = temp - 60
+        green = 288.1221695283 * (green ** -0.0755148492) / 255.0
+        green = max(0.0, min(1.0, green))
+    
+    # Calculate blue component
+    if temp >= 66:
+        blue = 1.0
+    elif temp <= 19:
+        blue = 0.0
+    else:
+        blue = temp - 10
+        blue = (138.5177312231 * np.log(blue) - 305.0447927307) / 255.0
+        blue = max(0.0, min(1.0, blue))
+    
+    return red, green, blue
+
+
+def apply_lift_gamma_gain(lut: np.ndarray, lift: Dict[str, float], 
+                         gamma: Dict[str, float], gain: Dict[str, float]) -> np.ndarray:
+    """Apply professional lift/gamma/gain color correction"""
+    result = lut.copy()
+    
+    # Apply lift (affects shadows/blacks)
+    lift_r, lift_g, lift_b = lift["r"], lift["g"], lift["b"]
+    result[..., 0] = result[..., 0] + lift_r * (1.0 - result[..., 0])
+    result[..., 1] = result[..., 1] + lift_g * (1.0 - result[..., 1])  
+    result[..., 2] = result[..., 2] + lift_b * (1.0 - result[..., 2])
+    
+    # Apply gamma (affects midtones)
+    gamma_r, gamma_g, gamma_b = gamma["r"], gamma["g"], gamma["b"]
+    result[..., 0] = np.power(np.clip(result[..., 0], 0.001, 1.0), 1.0/gamma_r)
+    result[..., 1] = np.power(np.clip(result[..., 1], 0.001, 1.0), 1.0/gamma_g)
+    result[..., 2] = np.power(np.clip(result[..., 2], 0.001, 1.0), 1.0/gamma_b)
+    
+    # Apply gain (affects highlights/whites) 
+    gain_r, gain_g, gain_b = gain["r"], gain["g"], gain["b"]
+    result[..., 0] = result[..., 0] * gain_r
+    result[..., 1] = result[..., 1] * gain_g
+    result[..., 2] = result[..., 2] * gain_b
+    
+    return np.clip(result, 0, 1)
+
+
+def apply_temperature_tint(lut: np.ndarray, temperature: float, tint: float) -> np.ndarray:
+    """Apply color temperature and tint adjustments"""
+    result = lut.copy()
+    
+    # Get RGB multipliers for temperature
+    temp_r, temp_g, temp_b = kelvin_to_rgb(temperature)
+    
+    # Normalize to maintain brightness
+    neutral_r, neutral_g, neutral_b = kelvin_to_rgb(6500.0)  # D65 standard
+    temp_r /= neutral_r
+    temp_g /= neutral_g  
+    temp_b /= neutral_b
+    
+    # Apply temperature adjustment
+    result[..., 0] *= temp_r
+    result[..., 1] *= temp_g
+    result[..., 2] *= temp_b
+    
+    # Apply tint (magenta-green bias)
+    tint_factor = tint / 100.0
+    if tint_factor != 0:
+        # Positive tint = more magenta, negative = more green
+        result[..., 0] += tint_factor * 0.1  # Slight red boost for magenta
+        result[..., 1] -= abs(tint_factor) * 0.1  # Reduce green
+        result[..., 2] += tint_factor * 0.05  # Slight blue boost for magenta
+    
+    return np.clip(result, 0, 1)
+
+
+def apply_channel_curves(lut: np.ndarray, red_curve: Dict[str, float], 
+                        green_curve: Dict[str, float], blue_curve: Dict[str, float]) -> np.ndarray:
+    """Apply channel-specific curve adjustments"""
+    result = lut.copy()
+    luminance = 0.299 * result[..., 0] + 0.587 * result[..., 1] + 0.114 * result[..., 2]
+    
+    # Create masks for tonal regions
+    shadow_mask = np.exp(-((luminance - 0.0) ** 2) / (2 * 0.15 ** 2))
+    midtone_mask = np.exp(-((luminance - 0.5) ** 2) / (2 * 0.25 ** 2))  
+    highlight_mask = np.exp(-((luminance - 1.0) ** 2) / (2 * 0.15 ** 2))
+    
+    # Normalize masks
+    total_mask = shadow_mask + midtone_mask + highlight_mask
+    shadow_mask /= total_mask
+    midtone_mask /= total_mask
+    highlight_mask /= total_mask
+    
+    # Apply red channel curve
+    red_adjustment = (shadow_mask * red_curve["shadows"] + 
+                     midtone_mask * red_curve["midtones"] + 
+                     highlight_mask * red_curve["highlights"])
+    result[..., 0] = np.power(result[..., 0], 1.0 / red_adjustment)
+    
+    # Apply green channel curve
+    green_adjustment = (shadow_mask * green_curve["shadows"] + 
+                       midtone_mask * green_curve["midtones"] + 
+                       highlight_mask * green_curve["highlights"])
+    result[..., 1] = np.power(result[..., 1], 1.0 / green_adjustment)
+    
+    # Apply blue channel curve  
+    blue_adjustment = (shadow_mask * blue_curve["shadows"] + 
+                      midtone_mask * blue_curve["midtones"] + 
+                      highlight_mask * blue_curve["highlights"])
+    result[..., 2] = np.power(result[..., 2], 1.0 / blue_adjustment)
+    
+    return np.clip(result, 0, 1)
+
+
 def params_to_lut(params: ColorParams) -> np.ndarray:
     """Convert color parameters to 3D LUT"""
     lut = generate_identity_lut(LUT_SIZE)
@@ -138,6 +281,9 @@ def params_to_lut(params: ColorParams) -> np.ndarray:
     lut = apply_color_tint(lut, params.highlight_tint, "highlights")
     lut = apply_saturation(lut, params.saturation)
     lut = apply_channel_adjustments(lut, params.channel_adjustments)
+    lut = apply_lift_gamma_gain(lut, params.lift, params.gamma, params.gain)
+    lut = apply_temperature_tint(lut, params.temperature, params.tint)
+    lut = apply_channel_curves(lut, params.red_curve, params.green_curve, params.blue_curve)
 
     return lut
 
@@ -169,23 +315,44 @@ async def analyze_image_with_gemini(image_data: bytes) -> Dict[str, Any]:
             "mime_type": "image/jpeg",
             "data": image_data
         }
-        prompt = """Analyze this image's color grading and return ONLY a JSON object with LUT parameters.
+        prompt = """You are a professional colorist analyzing this image's cinematic color grading. Examine the color characteristics carefully and provide precise LUT parameters to recreate this look.
 
-Response format (return ONLY this JSON, no other text):
+Analyze specifically:
+- Color temperature (warm vs cool tones) 
+- Shadow/midtone/highlight color shifts
+- Overall color bias (green/magenta tint, orange/teal, etc.)
+- Contrast and saturation characteristics
+- Film emulation or digital grade style
+
+Return ONLY this JSON object:
 {
-    "analysis": "brief color analysis (max 100 words)",
-    "black_point": <float 0.0-0.1>,
-    "white_point": <float 0.9-1.0>, 
-    "contrast": <float 0.5-2.0>,
-    "saturation": <float 0.0-2.0>,
+    "analysis": "detailed color analysis focusing on cinematic characteristics",
+    "black_point": <float 0.0-0.15>,
+    "white_point": <float 0.85-1.0>,
+    "contrast": <float 0.7-1.8>,
+    "saturation": <float 0.6-1.6>,
+    "temperature": <float 2000-12000>,
+    "tint": <float -50 to 50>,
+    "lift": {"r": <-0.3 to 0.3>, "g": <-0.3 to 0.3>, "b": <-0.3 to 0.3>},
+    "gamma": {"r": <0.4 to 2.5>, "g": <0.4 to 2.5>, "b": <0.4 to 2.5>},
+    "gain": {"r": <0.7 to 1.5>, "g": <0.7 to 1.5>, "b": <0.7 to 1.5>},
+    "red_curve": {"shadows": <0.5-2.0>, "midtones": <0.5-2.0>, "highlights": <0.5-2.0>},
+    "green_curve": {"shadows": <0.5-2.0>, "midtones": <0.5-2.0>, "highlights": <0.5-2.0>},
+    "blue_curve": {"shadows": <0.5-2.0>, "midtones": <0.5-2.0>, "highlights": <0.5-2.0>},
     "shadow_tint": {"color": "neutral", "balance": [1.0, 1.0, 1.0]},
     "highlight_tint": {"color": "neutral", "balance": [1.0, 1.0, 1.0]},
     "channel_adjustments": {}
 }
 
-Colors: neutral, cyan, teal, blue, orange, gold, red, magenta, green
-Balance: RGB multipliers (0.8-1.2)
-Base values: black_point=0.0, white_point=1.0, contrast=1.0, saturation=1.0"""
+Key cinematic characteristics to detect:
+- Orange/Teal: Warm highlights, cool shadows (common in blockbusters)
+- Film emulation: Lifted blacks, rolled highlights, specific color casts
+- Temperature shifts: Tungsten (3200K), Daylight (5600K), or stylized temps
+- Green bias: Common in sci-fi/thriller genres (2500-4000K range)
+- Bleach bypass: Desaturated, high contrast
+- Cross-processing: Unusual color curves, inverted midtones
+
+For cinematic green tint (like your reference): Use temperature 3200-4500K, negative tint (-20 to -40), boost green in gamma and midtones."""
 
         generation_config = genai.types.GenerationConfig(
             max_output_tokens=1000,  # Limit output for faster response
