@@ -291,11 +291,11 @@ export default function Home()
                   </p>
                 </div>
               </div>
-              <div className="flex flex-row items-center gap-2 flex-wrap justify-center sm:justify-end">
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 justify-center sm:justify-end">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/30 flex-1 sm:flex-none min-w-0 text-xs sm:text-sm"
+                  className="border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/30 w-full sm:w-auto text-xs sm:text-sm"
                   onClick={() => window.open("https://github.com/sponsors/veedy-dev", "_blank")}
                 >
                   <Heart className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-pink-500 flex-shrink-0" />
@@ -304,7 +304,7 @@ export default function Home()
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-600 dark:text-orange-300 dark:hover:bg-orange-900/30 flex-1 sm:flex-none min-w-0 text-xs sm:text-sm"
+                  className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-600 dark:text-orange-300 dark:hover:bg-orange-900/30 w-full sm:w-auto text-xs sm:text-sm"
                   onClick={() => window.open("https://ko-fi.com/veedygraph", "_blank")}
                 >
                   <Coffee className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-orange-500 flex-shrink-0" />
@@ -312,7 +312,7 @@ export default function Home()
                 </Button>
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex-1 sm:flex-none min-w-0 text-xs sm:text-sm"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white w-full sm:w-auto text-xs sm:text-sm"
                   onClick={() => window.open("https://github.com/veedy-dev/lutforge-ai", "_blank")}
                 >
                   <Github className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
