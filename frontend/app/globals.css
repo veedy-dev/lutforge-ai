@@ -92,3 +92,47 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Mobile-specific optimizations */
+@layer utilities {
+  /* Improve touch targets on mobile */
+  @media (max-width: 640px) {
+    .touch-target {
+      @apply min-h-[44px] min-w-[44px];
+    }
+    
+    /* Better text readability on small screens */
+    .mobile-text {
+      @apply leading-relaxed;
+    }
+    
+    /* Optimize card spacing for mobile */
+    .mobile-card {
+      @apply px-3 py-4;
+    }
+    
+    /* Safe area padding for mobile browsers */
+    .mobile-safe {
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+  }
+  
+  /* Reduce motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-spin {
+      animation: none;
+    }
+    .animate-pulse {
+      animation: none;
+    }
+  }
+  
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .contrast-border {
+      @apply border-2;
+    }
+  }
+}

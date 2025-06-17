@@ -127,38 +127,38 @@ export default function Home()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-950 dark:to-black">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Header */}
-        <div className="text-center mb-8 relative">
-          <div className="absolute top-0 right-0">
+        <div className="text-center mb-6 sm:mb-8 relative">
+          <div className="absolute top-0 right-0 z-10">
             <ThemeToggle />
           </div>
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <LUTForgeLogo className="w-12 h-12" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4 px-8 sm:px-0">
+            <LUTForgeLogo className="w-10 h-10 sm:w-12 sm:h-12" />
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               LUTForge AI
             </h1>
           </div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-sm sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2 sm:px-0 leading-relaxed">
             AI-powered color grading with intelligent 3D LUT generation. Upload an image, let AI
             analyze the color grade, and generate professional-quality LUTs for your workflow.
           </p>
-          <div className="flex items-center justify-center gap-2 mt-4">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 mt-3 sm:mt-4 px-2">
             <Badge
               variant="secondary"
-              className="bg-purple-100 text-purple-700 dark:bg-purple-800 dark:text-purple-200 dark:border dark:border-purple-600"
+              className="bg-purple-100 text-purple-700 dark:bg-purple-800 dark:text-purple-200 dark:border dark:border-purple-600 text-xs sm:text-sm"
             >
               Multimodal AI
             </Badge>
             <Badge
               variant="secondary"
-              className="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200 dark:border dark:border-blue-600"
+              className="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200 dark:border dark:border-blue-600 text-xs sm:text-sm"
             >
               3D LUT Generation
             </Badge>
             <Badge
               variant="secondary"
-              className="bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200 dark:border dark:border-green-600"
+              className="bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200 dark:border dark:border-green-600 text-xs sm:text-sm"
             >
               Live Preview
             </Badge>
@@ -167,18 +167,27 @@ export default function Home()
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="generate" className="flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              Generate LUT
+          <TabsList className="grid w-full grid-cols-3 mb-4 sm:mb-6 h-auto p-1">
+            <TabsTrigger
+              value="generate"
+              className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-4 text-xs sm:text-sm"
+            >
+              <Upload className="w-4 h-4 flex-shrink-0" />
+              <span className="text-center leading-tight">Generate LUT</span>
             </TabsTrigger>
-            <TabsTrigger value="adjust" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Manual Controls
+            <TabsTrigger
+              value="adjust"
+              className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-4 text-xs sm:text-sm"
+            >
+              <Settings className="w-4 h-4 flex-shrink-0" />
+              <span className="text-center leading-tight">Manual Controls</span>
             </TabsTrigger>
-            <TabsTrigger value="apply" className="flex items-center gap-2">
-              <Image className="w-4 h-4" />
-              Apply to Image
+            <TabsTrigger
+              value="apply"
+              className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 sm:py-2.5 px-2 sm:px-4 text-xs sm:text-sm"
+            >
+              <Image className="w-4 h-4 flex-shrink-0" />
+              <span className="text-center leading-tight">Apply to Image</span>
             </TabsTrigger>
           </TabsList>
 
@@ -265,49 +274,49 @@ export default function Home()
         </Tabs>
 
         {/* Support Project Card */}
-        <Card className="mt-8 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200 dark:from-purple-950/30 dark:to-pink-950/30 dark:border-purple-800/50">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full">
-                  <Heart className="w-6 h-6 text-white" />
+        <Card className="mt-6 sm:mt-8 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200 dark:from-purple-950/30 dark:to-pink-950/30 dark:border-purple-800/50">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex-shrink-0">
+                  <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-base sm:text-lg bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                     Support This Project
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                     Help us continue developing LUTForge AI! Your support enables us to improve
                     features, add new capabilities, and keep this tool free for the community.
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-row items-center gap-2 flex-wrap justify-center sm:justify-end">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/30"
+                  className="border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-900/30 flex-1 sm:flex-none min-w-0 text-xs sm:text-sm"
                   onClick={() => window.open("https://github.com/sponsors/veedy-dev", "_blank")}
                 >
-                  <Heart className="w-4 h-4 mr-2 text-pink-500" />
-                  Sponsor
+                  <Heart className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-pink-500 flex-shrink-0" />
+                  <span className="truncate">Sponsor</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-600 dark:text-orange-300 dark:hover:bg-orange-900/30"
+                  className="border-orange-300 text-orange-700 hover:bg-orange-50 dark:border-orange-600 dark:text-orange-300 dark:hover:bg-orange-900/30 flex-1 sm:flex-none min-w-0 text-xs sm:text-sm"
                   onClick={() => window.open("https://ko-fi.com/veedygraph", "_blank")}
                 >
-                  <Coffee className="w-4 h-4 mr-2 text-orange-500" />
-                  Ko-fi
+                  <Coffee className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-orange-500 flex-shrink-0" />
+                  <span className="truncate">Ko-fi</span>
                 </Button>
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white flex-1 sm:flex-none min-w-0 text-xs sm:text-sm"
                   onClick={() => window.open("https://github.com/veedy-dev/lutforge-ai", "_blank")}
                 >
-                  <Github className="w-4 h-4 mr-2" />
-                  Repository
+                  <Github className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                  <span className="truncate">Repository</span>
                 </Button>
               </div>
             </div>

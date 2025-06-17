@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   title: "LUTForge AI - Professional Color Grading",
   description: "AI-powered 3D LUT generation and professional color grading tools",
   generator: "LUTForge AI",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.ico",
@@ -30,7 +31,7 @@ export default function RootLayout({
 {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${dmSans.variable} font-sans antialiased`}>
+      <body className={`${dmSans.variable} font-sans antialiased mobile-safe`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

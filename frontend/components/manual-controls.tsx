@@ -410,7 +410,7 @@ export default function ManualControls(
           </Card>
 
           {/* Controls */}
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Basic Adjustments */}
             <Card>
               <CardHeader>

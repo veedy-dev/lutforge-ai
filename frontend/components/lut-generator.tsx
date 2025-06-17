@@ -313,21 +313,21 @@ export default function LutGenerator(
       {/* Upload Area */}
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-4 sm:p-8 text-center cursor-pointer transition-colors ${
           isDragActive ? "border-purple-400 bg-purple-50 dark:bg-purple-900/30"
             : "border-gray-300 hover:border-purple-400 hover:bg-gray-50 dark:border-gray-400 dark:hover:border-purple-400 dark:hover:bg-gray-900"
         }`}
       >
         <input {...getInputProps()} />
-        <div className="flex flex-col items-center gap-4">
-          <div className="p-4 bg-purple-100 dark:bg-purple-800 rounded-full">
-            <Upload className="w-8 h-8 text-purple-600 dark:text-purple-300" />
+        <div className="flex flex-col items-center gap-3 sm:gap-4">
+          <div className="p-3 sm:p-4 bg-purple-100 dark:bg-purple-800 rounded-full">
+            <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 dark:text-purple-300" />
           </div>
           <div>
-            <p className="text-lg font-medium">
+            <p className="text-base sm:text-lg font-medium">
               {isDragActive ? "Drop your image here" : "Upload reference image"}
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground px-2 sm:px-0">
               Drag & drop or click to select • JPEG, PNG, TIFF supported
             </p>
           </div>
@@ -336,11 +336,11 @@ export default function LutGenerator(
 
       {/* Preview and Analysis */}
       {uploadedImage && (
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Card>
-            <CardContent className="p-4">
-              <h3 className="font-medium mb-3 flex items-center gap-2">
-                <ImageIcon className="w-4 h-4" />
+            <CardContent className="p-3 sm:p-4">
+              <h3 className="font-medium mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                <ImageIcon className="w-4 h-4 flex-shrink-0" />
                 Reference Image
               </h3>
               <div
@@ -358,9 +358,9 @@ export default function LutGenerator(
           </Card>
 
           <Card>
-            <CardContent className="p-4">
-              <h3 className="font-medium mb-3 flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
+            <CardContent className="p-3 sm:p-4">
+              <h3 className="font-medium mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                <Sparkles className="w-4 h-4 flex-shrink-0" />
                 AI Analysis
               </h3>
               <div className="space-y-4">
