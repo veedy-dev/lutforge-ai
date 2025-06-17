@@ -1,15 +1,19 @@
 import os
-import io
-import json
 import numpy as np
 import cv2
 import google.generativeai as genai
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from typing import Dict, Any
+
+try:
+    import ujson as json
+    print("✅ Using ujson for faster JSON parsing")
+except ImportError:
+    import json
+    print("⚠️ ujson not found, using standard json library. Install with: pip install ujson")
 
 # Load environment variables
 load_dotenv()
@@ -156,125 +160,87 @@ def lut_to_cube(lut: np.ndarray) -> str:
     return cube
 
 
-def analyze_image_with_gemini(image_data: bytes) -> str:
+async def analyze_image_with_gemini(image_data: bytes) -> Dict[str, Any]:
+    """Fast AI analysis using latest Gemini model with combined analysis and parameter generation"""
     try:
-        # Configure Gemini API with your key
-        print("Configuring Gemini API...")
-        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-        print("✅ API key configured")
-
-        # Create the model
-        print("Creating Gemini Pro Vision model...")
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        print("✅ Model created")
-
-        # Prepare the image part
-        print("Preparing image for Gemini...")
+        print("Starting fast AI analysis with Gemini 2.0 Flash...")
+        model = genai.GenerativeModel('gemini-2.0-flash')
         image_part = {
-            "mime_type": "image/jpeg",  # Assuming JPEG, adjust if needed
+            "mime_type": "image/jpeg",
             "data": image_data
         }
-        print("✅ Image prepared")
+        prompt = """Analyze this image's color grading and return ONLY a JSON object with LUT parameters.
 
-        # Create the prompt
-        prompt = """
-        Analyze this image and describe the current color grading characteristics. 
-        Focus on:
-        1. Color temperature (warm/cool)
-        2. Contrast levels
-        3. Saturation
-        4. Shadow/highlight characteristics
-        5. Overall mood/style
-        
-        Provide specific recommendations for LUT adjustments.
-        """
+Response format (return ONLY this JSON, no other text):
+{
+    "analysis": "brief color analysis (max 100 words)",
+    "black_point": <float 0.0-0.1>,
+    "white_point": <float 0.9-1.0>, 
+    "contrast": <float 0.5-2.0>,
+    "saturation": <float 0.0-2.0>,
+    "shadow_tint": {"color": "neutral", "balance": [1.0, 1.0, 1.0]},
+    "highlight_tint": {"color": "neutral", "balance": [1.0, 1.0, 1.0]},
+    "channel_adjustments": {}
+}
 
-        # Generate content with the model
-        print("Sending request to Gemini Vision API...")
-        response = model.generate_content([prompt, image_part])
-        print("✅ Received response from Gemini Vision API")
+Colors: neutral, cyan, teal, blue, orange, gold, red, magenta, green
+Balance: RGB multipliers (0.8-1.2)
+Base values: black_point=0.0, white_point=1.0, contrast=1.0, saturation=1.0"""
+
+        generation_config = genai.types.GenerationConfig(
+            max_output_tokens=1000,  # Limit output for faster response
+            temperature=0.1,         # Lower temperature for more consistent output
+            top_p=0.8,              # Focused sampling for speed
+            top_k=10                # Reduced candidate pool for speed
+        )
+
+        print("Sending optimized request to Gemini 2.0 Flash...")
+        response = model.generate_content(
+            [prompt, image_part],
+            generation_config=generation_config
+        )
         
         if not response.text:
-            print("❌ Empty response from Gemini")
-            raise Exception("Empty response from Gemini Vision API")
+            raise Exception("Empty response from Gemini API")
             
-        print(f"✅ Analysis completed, response length: {len(response.text)}")
-        return response.text
+        print(f"✅ Fast analysis completed, response length: {len(response.text)}")
+        
+        response_text = response.text.strip()
+        
+        if response_text.startswith('{') and response_text.endswith('}'):
+            json_str = response_text
+        else:
+            start = response_text.find('{')
+            end = response_text.rfind('}') + 1
+            if start == -1 or end == 0:
+                raise ValueError("No JSON found in response")
+            json_str = response_text[start:end]
+
+        # Parse with ujson (much faster than standard json)
+        result = json.loads(json_str)
+        print("✅ JSON parsed successfully with ujson")
+        return result
 
     except Exception as e:
-        print(f"❌ Error in analyze_image_with_gemini: {str(e)}")
-        print(f"Error type: {type(e).__name__}")
-        if hasattr(e, 'response'):
-            print(f"API Response: {e.response}")
+        print(f"❌ Error in fast AI analysis: {str(e)}")
         raise
 
 
-def generate_parameters_with_gemini(analysis: str) -> ColorParams:
-    """Convert the color analysis into specific numeric parameters"""
+def params_from_response(response_data: Dict[str, Any]) -> ColorParams:
+    """Convert the combined response to ColorParams object"""
     try:
-        print("Converting analysis to parameters...")
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Extract the analysis text for logging
+        analysis = response_data.get("analysis", "No analysis provided")
+        print(f"Color Analysis: {analysis}")
         
-        prompt = f"""
-        Based on this color analysis:
-        {analysis}
+        # Remove the analysis field before creating ColorParams
+        params_dict = {k: v for k, v in response_data.items() if k != "analysis"}
         
-        Generate specific numeric parameters for a 3D LUT. Return a JSON object with these exact fields:
-        {{
-            "black_point": <float between 0.0 and 0.1>,
-            "white_point": <float between 0.9 and 1.0>,
-            "contrast": <float between 0.5 and 2.0>,
-            "saturation": <float between 0.0 and 2.0>,
-            "shadow_tint": {{"color": "neutral", "balance": [1.0, 1.0, 1.0]}},
-            "highlight_tint": {{"color": "neutral", "balance": [1.0, 1.0, 1.0]}},
-            "channel_adjustments": {{}}
-        }}
-        
-        For shadow_tint and highlight_tint, use color names: "neutral", "cyan", "teal", "blue", "orange", "gold", "red", "magenta", "green"
-        Balance values are RGB multipliers between 0.8 and 1.2.
-        
-        Base neutral values:
-        - black_point: 0.0
-        - white_point: 1.0  
-        - contrast: 1.0
-        - saturation: 1.0
-        - tints: neutral with [1.0, 1.0, 1.0] balance
-        
-        Only deviate from neutral when the analysis specifically suggests adjustments.
-        """
-        
-        response = model.generate_content(prompt)
-        
-        # Parse JSON response - extract JSON from the response
-        response_text = response.text.strip()
-        print(f"Raw Gemini response: {response_text[:200]}...")
-        
-        # Try to extract JSON from the response
-        try:
-            # Look for JSON block in the response
-            if '```json' in response_text:
-                json_start = response_text.find('```json') + 7
-                json_end = response_text.find('```', json_start)
-                json_str = response_text[json_start:json_end].strip()
-            elif '{' in response_text and '}' in response_text:
-                # Find the first complete JSON object
-                json_start = response_text.find('{')
-                json_end = response_text.rfind('}') + 1
-                json_str = response_text[json_start:json_end]
-            else:
-                raise ValueError("No JSON found in response")
-                
-            params_dict = json.loads(json_str)
-            print(f"Successfully parsed parameters: {params_dict}")
-        except (json.JSONDecodeError, ValueError) as e:
-            print(f"Failed to parse JSON: {e}")
-            raise ValueError(f"Invalid JSON response from Gemini: {e}")
-        
-        print("✅ Parameters generated from analysis")
+        print(f"Extracted parameters: {params_dict}")
         return ColorParams(**params_dict)
         
     except Exception as e:
-        print(f"❌ Error generating parameters: {str(e)}")
+        print(f"❌ Error creating ColorParams: {str(e)}")
         # Fallback to neutral parameters
         print("Using neutral fallback parameters")
         return ColorParams()
@@ -287,73 +253,61 @@ async def health_check():
 
 @app.get("/test-gemini")
 async def test_gemini():
-    """Test Gemini API connection"""
+    """Test Gemini 2.0 Flash API connection"""
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        # Simple test prompt
-        response = model.generate_content("Say 'Hello from Gemini API'")
-        return {"status": "success", "gemini_response": response.text}
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        response = model.generate_content("Say 'Hello from Gemini 2.0 Flash API - Lightning Fast!'")
+        return {"status": "success", "model": "gemini-2.0-flash", "gemini_response": response.text}
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
 @app.post("/api/generate-lut")
 async def generate_lut(file: UploadFile = File(...)):
-    # Validate file type
+    """Fast LUT generation with optimized AI pipeline"""
     if not file.content_type.startswith('image/'):
         raise HTTPException(
             status_code=400, detail="Invalid file type. Please upload an image.")
 
     try:
         # Read image data
-        print(f"Reading file: {file.filename}, content_type: {file.content_type}")
+        print(f"📁 Reading file: {file.filename}, content_type: {file.content_type}")
         image_data = await file.read()
-        print(f"Image data read successfully, size: {len(image_data)} bytes")
-
-        # Step 1: Analyze image with Gemini Vision
-        print("Starting Gemini Vision analysis...")
+        print(f"✅ Image data read successfully, size: {len(image_data)} bytes")
+        print("🚀 Starting optimized AI analysis...")
         try:
-            analysis = analyze_image_with_gemini(image_data)
-            print("✅ Gemini Vision analysis completed successfully")
-            print("Color Analysis:", analysis)
+            response_data = await analyze_image_with_gemini(image_data)
+            print("✅ Fast AI analysis completed successfully")
         except Exception as e:
-            print(f"❌ Gemini Vision analysis failed: {str(e)}")
-            print(f"Error type: {type(e).__name__}")
-            raise HTTPException(status_code=500, detail=f"Gemini Vision analysis failed: {str(e)}")
+            print(f"❌ AI analysis failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"AI analysis failed: {str(e)}")
 
-        # Step 2: Generate parameters with Gemini
-        print("Starting parameter generation...")
+        # Convert response to parameters
+        print("🔧 Converting to LUT parameters...")
         try:
-            params = generate_parameters_with_gemini(analysis)
-            print("✅ Parameter generation completed successfully")
+            params = params_from_response(response_data)
+            print("✅ Parameters extracted successfully")
             print("Color Parameters:", params.model_dump())
         except Exception as e:
-            print(f"❌ Parameter generation failed: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Parameter generation failed: {str(e)}")
-
-        # Step 3: Generate LUT from parameters
-        print("Starting LUT generation...")
+            print(f"❌ Parameter extraction failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Parameter extraction failed: {str(e)}")
+        print("⚡ Generating LUT array...")
         try:
             lut_array = params_to_lut(params)
             print(f"✅ LUT array generated successfully, shape: {lut_array.shape}")
         except Exception as e:
             print(f"❌ LUT generation failed: {str(e)}")
             raise HTTPException(status_code=500, detail=f"LUT generation failed: {str(e)}")
-
-        # Step 4: Convert to cube format
-        print("Converting to .cube format...")
+        print("📄 Converting to .cube format...")
         try:
             cube_content = lut_to_cube(lut_array)
             print(f"✅ Cube content generated successfully, length: {len(cube_content)}")
         except Exception as e:
             print(f"❌ Cube conversion failed: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Cube conversion failed: {str(e)}")
-
-        print("🎉 LUT generation completed successfully!")
+        print("🎉 Fast LUT generation completed successfully!")
         return cube_content
 
     except HTTPException:
-        # Re-raise HTTP exceptions as-is
         raise
     except Exception as e:
         print(f"❌ Unexpected error in generate_lut: {str(e)}")
