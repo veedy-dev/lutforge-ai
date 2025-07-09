@@ -76,7 +76,7 @@ Visit `http://localhost:3000` to use the application.
 
 ## How It Works
 
-1. **AI Visual Analysis** - Google Gemini 2.0 Flash analyzes the reference image to identify the optimal cinematic look and color grading approach
+1. **AI Visual Analysis** - Google Gemini 2.5 Flash analyzes the reference image to identify the optimal cinematic look and color grading approach
 2. **Color Space Processing** - Convert reference image to multiple color spaces (RGB, HSV, LAB) for comprehensive analysis  
 3. **Luminance Segmentation** - Split image into shadows (<25%), midtones (25-75%), highlights (>75%) using professional colorist techniques
 4. **Color Characteristic Extraction** - Calculate dominant colors, temperature bias, and saturation levels for each luminance range
@@ -84,7 +84,7 @@ Visit `http://localhost:3000` to use the application.
 
 ### Technical Details
 
-- **Backend**: FastAPI + OpenCV for image processing, Google Gemini 2.0 for AI analysis
+- **Backend**: FastAPI + OpenCV for image processing, Google Gemini 2.5 for AI analysis
 - **Frontend**: Next.js + Canvas API for real-time LUT preview
 - **Color Science**: Uses MKL (Monge-Kantorovich Linear) algorithm for natural color transfer
 - **Safety**: Conservative blending prevents color inversions and maintains skin tone integrity
@@ -100,7 +100,7 @@ Visit `http://localhost:3000` to use the application.
 ### Backend  
 - **API**: FastAPI (Python)
 - **Image Processing**: OpenCV, PIL
-- **AI**: Google Gemini 2.0 Flash
+- **AI**: Google Gemini 2.5 Flash
 - **Color Science**: color-matcher library
 - **Performance**: ujson, NumPy
 

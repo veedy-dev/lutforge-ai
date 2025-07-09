@@ -291,7 +291,7 @@ def enhance_reference_colors(ref_img: np.ndarray, look: CinematicLook) -> np.nda
 async def analyze_image_for_cinematic_look(image_data: bytes) -> ColorMatcherResponse:
     """Use AI to determine the best cinematic look for the uploaded image"""
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         image_part = {
             "mime_type": "image/jpeg",
             "data": image_data
